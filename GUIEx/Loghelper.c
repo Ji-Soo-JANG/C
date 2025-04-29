@@ -16,6 +16,8 @@ const wchar_t* GetMessageName(UINT msg) {
     case WM_LBUTTONDOWN: return L"WM_LBUTTONDOWN";
     case WM_RBUTTONDOWN: return L"WM_RBUTTONDOWN";
     case WM_COMMAND: return L"WM_COMMAND";
+    case WM_SETFOCUS: return L"WM_SETFOCUS";
+    case WM_KILLFOCUS: return L"WM_KILLFOCUS";
     }
     return NULL;
 }
