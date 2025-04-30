@@ -6,20 +6,32 @@
 
 //로그용 패널
 HWND hDebugPanel;
-HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hButtonRegister;
+HWND hBtnHome;
+HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
+HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
 HFONT hFont;
 
+// ホームのパンネル配列
+HWND mainHWNDs[3];
+#define countMainCtrs (sizeof(mainHWNDs) / sizeof(mainHWNDs[0]))
+
 // パンネル構造体作成
-struct Component {
+struct registerCtrs {
     HWND hwnd;
     wchar_t name[50];
 };
 
-struct Component coms[3];
-#define COMS_COUNT (sizeof(coms) / sizeof(coms[0]))
+struct registerCtrs regStructs[4];
+HWND regHWNDs[5];
+#define countRegEdits (sizeof(regStructs) / sizeof(regStructs[0]))
+#define countRegCtrs (sizeof(regHWNDs) / sizeof(regHWNDs[0]))
+
+
+// toggleShow 機能作成
+void toggleWindow(HWND arr[], int count, BOOL show);
 
 // placeholder 機能作成
-void setPlaceholder(struct Component* com);
+void setPlaceholder(struct registerCtrs* com);
 
 
 // 메시지 처리 함수 (닫기 이벤트만 처리)
@@ -50,28 +62,61 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             hwnd, NULL, pcs->hInstance, NULL
         );
 
-              // 画面の要素作成
-        hEditKana = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 50, 200, 50, hwnd, (HMENU)1001, pcs->hInstance, NULL);
-        hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 100, 200, 50, hwnd, (HMENU)1002, pcs->hInstance, NULL);
-        hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 150, 200, 50, hwnd, (HMENU)1003, pcs->hInstance, NULL);
-        hButtonRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 200, 200, 50, hwnd, (HMENU)1004, pcs->hInstance, NULL);
-        
-        struct Component cKana = { hEditKana, L"カナ" };
-        struct Component cMeaning = { hEditMeaning, L"意味" };
-        struct Component cExample = { hEditExample, L"例文" };
+        // ホームのボタン作成
+        hBtnHome = CreateWindowW(L"Button", L"ホームへ", WS_CHILD | WS_VISIBLE | WS_BORDER, 30, 500, 100, 50, hwnd, (HWND)1001, pcs->hInstance, NULL);
+        SendMessageW(hBtnHome, WM_SETFONT, (WPARAM)hFont, TRUE);
 
-        coms[0] = cKana;
-        coms[1] = cMeaning;
-        coms[2] = cExample;
+        // 格の機能のボタン作成
+        hBtnRegisterPage = CreateWindowW(L"Button", L"登録", WS_CHILD | WS_VISIBLE | WS_BORDER, 260, 100, 100, 200, hwnd, (HMENU)1002, pcs->hInstance, NULL);
+        hBtnSearchPage = CreateWindowW(L"Button", L"照会", WS_CHILD | WS_VISIBLE | WS_BORDER, 360, 100, 100, 200, hwnd, (HMENU)1003, pcs->hInstance, NULL);
+        hBtnQuizPage = CreateWindowW(L"Button", L"クイズ", WS_CHILD | WS_VISIBLE | WS_BORDER, 460, 100, 100, 200, hwnd, (HMENU)1004, pcs->hInstance, NULL);
+        SendMessageW(hBtnRegisterPage, WM_SETFONT, (WPARAM)hFont, TRUE);
+        SendMessageW(hBtnSearchPage, WM_SETFONT, (WPARAM)hFont, TRUE);
+        SendMessageW(hBtnQuizPage, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+        mainHWNDs[0] = hBtnRegisterPage;
+        mainHWNDs[1] = hBtnSearchPage;
+        mainHWNDs[2] = hBtnQuizPage;
+
+        toggleWindow(mainHWNDs, countMainCtrs, TRUE);
+
+
+
+        // 画面の要素作成
+        hEditKanji = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 50, 200, 50, hwnd, (HMENU)1005, pcs->hInstance, NULL);
+        hEditKana = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 100, 200, 50, hwnd, (HMENU)1006, pcs->hInstance, NULL);
+        hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 150, 200, 50, hwnd, (HMENU)1007, pcs->hInstance, NULL);
+        hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 200, 200, 50, hwnd, (HMENU)1008, pcs->hInstance, NULL);
+        hBtnRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER , 50, 250, 200, 50, hwnd, (HMENU)1009, pcs->hInstance, NULL);
         
+        struct registerCtrs cKanji = { hEditKanji, L"漢字" };
+        struct registerCtrs cKana = { hEditKana, L"カナ" };
+        struct registerCtrs cMeaning = { hEditMeaning, L"意味" };
+        struct registerCtrs cExample = { hEditExample, L"例文" };
+
+        regStructs[0] = cKanji;
+        regStructs[1] = cKana;
+        regStructs[2] = cMeaning;
+        regStructs[3] = cExample;
+        
+        SendMessageW(hEditKanji, WM_SETFONT, (WPARAM)hFont, TRUE);
         SendMessageW(hEditKana, WM_SETFONT, (WPARAM)hFont, TRUE);
         SendMessageW(hEditMeaning, WM_SETFONT, (WPARAM)hFont, TRUE);
         SendMessageW(hEditExample, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessageW(hButtonRegister, WM_SETFONT, (WPARAM)hFont, TRUE);
+        SendMessageW(hBtnRegister, WM_SETFONT, (WPARAM)hFont, TRUE);
 
-        for (int i = 0; i < COMS_COUNT; i++) {
-            setPlaceholder(&coms[i]);
+        for (int i = 0; i < countRegEdits; i++) {
+            setPlaceholder(&regStructs[i]);
         }
+
+        regHWNDs[0] = hEditKanji;
+        regHWNDs[1] = hEditKana;
+        regHWNDs[2] = hEditMeaning;
+        regHWNDs[3] = hEditExample;
+        regHWNDs[4] = hBtnRegister;
+
+        toggleWindow(regHWNDs, countRegCtrs, FALSE);
+
         break;
 
 
@@ -83,31 +128,65 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         wsprintfW(log, L"%d", code);
         OutputDebugStringW(log);*/
 
+        if (code == BN_CLICKED) {
+            int id = LOWORD(wParam);
+            
+            wchar_t log[128];
+            HWND ctr = (HWND)lParam;
+            if (id == 1001) {
+                toggleWindow(mainHWNDs, countMainCtrs, TRUE);
+                toggleWindow(regHWNDs, countRegCtrs, FALSE);
+             
+            }
+
+            for (int i = 0; i < countMainCtrs; i++) {
+                if (ctr == mainHWNDs[i]) {
+                    wchar_t btnName[128];
+                    GetWindowTextW(ctr, btnName, _countof(btnName));
+                    wsprintfW(log, L"%s가 눌렸습니다.\n", btnName);
+                    OutputDebugStringW(log);
+
+                    toggleWindow(mainHWNDs, countMainCtrs, FALSE);
+                    InvalidateRect(hwnd, NULL, TRUE);
+                    UpdateWindow(hwnd);
+
+                    toggleWindow(regHWNDs, countRegCtrs, TRUE);
+                    for (int i = 0; i < countRegEdits; i++) {
+                        setPlaceholder(&regStructs[i]);
+                    }
+
+                    break;
+                }
+            }
+
+        }
+
+
         if (code == EN_SETFOCUS) {
-            for (int i = 0; i < COMS_COUNT; i++) {
-                if ((HWND)lParam == coms[i].hwnd) {
+            for (int i = 0; i < countRegEdits; i++) {
+                if ((HWND)lParam == regStructs[i].hwnd) {
                     wchar_t buf[128];
                     GetWindowTextW(lParam, buf, sizeof(buf) / sizeof(wchar_t));
 
                     wchar_t expected[128];
-                    wsprintfW(expected, L"%sを入力してください", coms[i].name);
+                    wsprintfW(expected, L"%sを入力してください", regStructs[i].name);
                     //OutputDebugString(expected);
 
                     if (wcscmp(buf, expected) == 0) {
-                        SetWindowTextW(coms[i].hwnd, L"");
+                        SetWindowTextW(regStructs[i].hwnd, L"");
                     }
                 }
             }
         }
 
         if (code == EN_KILLFOCUS) {
-            for (int i = 0; i < COMS_COUNT; i++) {
-                if ((HWND)lParam == coms[i].hwnd) {
+            for (int i = 0; i < countRegEdits; i++) {
+                if ((HWND)lParam == regStructs[i].hwnd) {
                     wchar_t buf[128];
                     GetWindowTextW((HWND)lParam, buf, sizeof(buf) / sizeof(wchar_t));
 
                     if (wcscmp(buf,L"") == 0) {
-                        setPlaceholder(&coms[i]);
+                        setPlaceholder(&regStructs[i]);
                     }
                 }
             }
@@ -141,6 +220,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = L"BasicWindow";
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
 
     RegisterClass(&wc);
 
@@ -165,7 +246,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     return 0;
 }
 
-void setPlaceholder(struct Component* com) {
+void toggleWindow(HWND arr[], int count,  BOOL show) {
+    wchar_t dbg[64];
+    for (int i = 0; i < count; i++) {
+        wsprintfW(dbg, L"toggleWindow: HWND=0x%p, show=%d\n", arr[i], show);
+        OutputDebugStringW(dbg);
+
+        ShowWindow(arr[i], show ? SW_SHOW : SW_HIDE);
+    }
+}
+
+void setPlaceholder(struct registerCtrs* com) {
     const wchar_t* suffix = L"を入力してください";
     HWND hwnd = com->hwnd;
     wchar_t buf[128];
