@@ -127,11 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dictionary.c" />
+    <ClCompile Include="dictionary.h" />
+    <ClCompile Include="fileio.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="Loghelper.c" />
     <ClCompile Include="ui.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fileio.h" />
     <ClInclude Include="Loghelper.h" />
     <ClInclude Include="ui.h" />
   </ItemGroup>

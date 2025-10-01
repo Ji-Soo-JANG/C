@@ -7,7 +7,6 @@ extern HWND hBtnHome;
 extern HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
 extern HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
 extern HWND hBtnSearch, hListViewType, hListViewWord;
-extern HWND hBtnSearch, hListViewType, hListViewWord;
 
 //// ホームのパンネル配列
 extern HWND mainHWNDs[];

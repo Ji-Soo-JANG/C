@@ -1,4 +1,5 @@
 ﻿#include "ui.h"
+#include "dictionary.h"
 #include <CommCtrl.h>
 #pragma comment(lib, "Comctl32.lib")
 
@@ -7,7 +8,6 @@ HFONT hFont;
 HWND hBtnHome;
 HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
 HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
-HWND hBtnSearch, hListViewType, hListViewWord;
 HWND hBtnSearch, hListViewType, hListViewWord;
 
 HWND mainHWNDs[3];
@@ -20,6 +20,14 @@ HWND searchHWNDs[2];
 #define countRegEdits (sizeof(regStructs) / sizeof(regStructs[0]))
 #define countRegCtrs (sizeof(regHWNDs) / sizeof(regHWNDs[0]))
 #define countSearchCtrs (sizeof(searchHWNDs) / sizeof(searchHWNDs[0]))
+
+static BOOL readText(HWND h, wchar_t* out, int cap) {
+    wchar_t tmp[512];
+    GetWindowTextW(h, tmp, _countof(tmp));
+    if (wcsstr(tmp, L"を入力してください")) { out[0] = L'\0'; return TRUE; }
+    wcsncpy_s(out, cap, tmp, _TRUNCATE);
+    return TRUE;
+}
 
 void createHFont() {
     hFont = CreateFontW(
@@ -41,7 +49,7 @@ void createDebugPanel(HWND hwnd, LPCREATESTRUCT pcs) {
 }
 
 void createBtnHome(HWND hwnd, LPCREATESTRUCT pcs) {
-    hBtnHome = CreateWindowW(L"Button", L"ホームへ", WS_CHILD | WS_VISIBLE | WS_BORDER, 30, 500, 100, 50, hwnd, (HWND)1001, pcs->hInstance, NULL);
+    hBtnHome = CreateWindowW(L"Button", L"ホームへ", WS_CHILD | WS_VISIBLE | WS_BORDER, 30, 500, 100, 50, hwnd, (HMENU)1001, pcs->hInstance, NULL);
     SendMessageW(hBtnHome, WM_SETFONT, (WPARAM)hFont, TRUE);
 }
 
@@ -179,6 +187,30 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
 
                 toggleWindow(searchHWNDs, 1, TRUE);
                 break;
+
+            case 1009:
+            {
+                Word w = (Word){ 0 };
+                readText(hEditKanji, w.kanji, _countof(w.kanji));
+                readText(hEditKana, w.kana, _countof(w.kana));
+                readText(hEditMeaning, w.meaning, _countof(w.meaning));
+                readText(hEditExample, w.example, _countof(w.example));
+                w.type = 0; w.proficiency = 0;
+
+                int rc = dict_add(&w);
+                if (rc == 0) {
+                    int n = dict_count();
+                    wchar_t ok[160];
+                    wsprintfW(ok, L"登録しました。（現在 %d 件）", n);
+                    MessageBoxW(hwnd, ok, L"OK", MB_OK | MB_ICONINFORMATION);
+
+                    wchar_t dbg[256]; wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", n, w.kanji, w.kana);
+                    MessageBoxW(hwnd, dbg, L"登録成功", MB_OK | MB_ICONINFORMATION);
+                
+                    dict_save(&w);
+                }
+            }
+                break;
         }
 
     }
@@ -188,7 +220,7 @@ void setFocusEvent(LPARAM lParam) {
     for (int i = 0; i < countRegEdits; i++) {
         if ((HWND)lParam == regStructs[i].hwnd) {
             wchar_t buf[128];
-            GetWindowTextW(lParam, buf, sizeof(buf) / sizeof(wchar_t));
+            GetWindowTextW((HWND)lParam, buf, _countof(buf));
 
             wchar_t expected[128];
             wsprintfW(expected, L"%sを入力してください", regStructs[i].name);

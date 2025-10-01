@@ -72,6 +72,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         break;
 
     case WM_DESTROY:
+        if (hFont) {
+            DeleteObject(hFont);
+            hFont = NULL;
+        }
         PostQuitMessage(0);
         return 0;
 
