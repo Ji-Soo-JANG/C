@@ -183,9 +183,8 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 words = dict_get_all();
                 size_t count = dict_count();
                 wchar_t buf[64];
-                wsprintfW(buf, L"count:%d", count);
-
-                MessageBoxW(hwnd, count, L"count", MB_OK | MB_ICONINFORMATION);
+                //wsprintfW(buf, L"count:%d", (int)count);
+               // MessageBoxW(hwnd, count, L"count", MB_OK | MB_ICONINFORMATION);
                 break;
 
             case 1004 :
