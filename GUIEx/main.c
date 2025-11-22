@@ -37,6 +37,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         // 照会画面の要素作成
         createSearchCtrs(hwnd, pcs);
 
+        dict_init();
+
         break;
 
 

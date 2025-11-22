@@ -154,6 +154,8 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
         wsprintfW(log, L"%s가 눌렸습니다.\n", btnName);
         OutputDebugStringW(log);
 
+        const Word* words;
+
         switch (id) {
             case 1001 :
                 toggleWindow(mainHWNDs, countMainCtrs, TRUE);
@@ -176,8 +178,14 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 toggleWindow(mainHWNDs, countMainCtrs, FALSE);
                 InvalidateRect(hwnd, NULL, TRUE);
                 UpdateWindow(hwnd);
-
                 toggleWindow(searchHWNDs, countSearchCtrs, TRUE);
+
+                words = dict_get_all();
+                size_t count = dict_count();
+                wchar_t buf[64];
+                wsprintfW(buf, L"count:%d", count);
+
+                MessageBoxW(hwnd, count, L"count", MB_OK | MB_ICONINFORMATION);
                 break;
 
             case 1004 :
@@ -197,7 +205,7 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 readText(hEditExample, w.example, _countof(w.example));
                 w.type = 0; w.proficiency = 0;
 
-                int rc = dict_add(&w);
+                size_t rc = dict_add(&w);
                 if (rc == 0) {
                     int n = dict_count();
                     wchar_t ok[160];
@@ -207,7 +215,7 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                     wchar_t dbg[256]; wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", n, w.kanji, w.kana);
                     MessageBoxW(hwnd, dbg, L"登録成功", MB_OK | MB_ICONINFORMATION);
                 
-                    dict_save(&w);
+                    dict_save();
                 }
             }
                 break;
