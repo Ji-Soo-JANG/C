@@ -108,14 +108,14 @@ void createRegCtrs(HWND hwnd, LPCREATESTRUCT pcs) {
 void createSearchCtrs(HWND hwnd, LPCREATESTRUCT pcs) {
     hListViewType = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL, WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS, 30, 50, 100, 450, hwnd, (HMENU)2001, pcs->hInstance, NULL);
     LVCOLUMNW colType = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
-    colType.cx = 100;  colType.pszText = L"リスト";     ListView_InsertColumn(hListViewType, 0, &colType);
+    colType.cx = 100;  colType.pszText = L"リスト";   ListView_InsertColumn(hListViewType, 0, &colType);
 
     hListViewWord = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL, WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS, 130, 50, 600, 450, hwnd, (HMENU)2002, pcs->hInstance, NULL);
     LVCOLUMNW colWord = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
     colWord.cx = 150; colWord.pszText = L"漢字";      ListView_InsertColumn(hListViewWord, 0, &colWord);
-    colWord.cx = 150; colWord.pszText = L"カナ";      ListView_InsertColumn(hListViewWord, 0, &colWord);
-    colWord.cx = 150; colWord.pszText = L"意味";      ListView_InsertColumn(hListViewWord, 0, &colWord);
-    colWord.cx = 150; colWord.pszText = L"例文";      ListView_InsertColumn(hListViewWord, 0, &colWord);
+    colWord.cx = 150; colWord.pszText = L"カナ";      ListView_InsertColumn(hListViewWord, 1, &colWord);
+    colWord.cx = 150; colWord.pszText = L"意味";      ListView_InsertColumn(hListViewWord, 2, &colWord);
+    colWord.cx = 150; colWord.pszText = L"例文";      ListView_InsertColumn(hListViewWord, 3, &colWord);
 
     searchHWNDs[0] = hListViewType;
     searchHWNDs[1] = hListViewWord;
@@ -181,10 +181,43 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 toggleWindow(searchHWNDs, countSearchCtrs, TRUE);
 
                 words = dict_get_all();
+               
                 size_t count = dict_count();
-                wchar_t buf[64];
-                //wsprintfW(buf, L"count:%d", (int)count);
-               // MessageBoxW(hwnd, count, L"count", MB_OK | MB_ICONINFORMATION);
+                wchar_t buf[200];
+                wsprintfW(buf, L"count = %d", count);
+                MessageBoxW(hwnd, buf, L"ok", MB_OK);
+
+                wchar_t b[1000];
+
+                const Word* ex = dict_get_all();
+
+                wsprintfW(b, L"%s / %s", ex[count - 1].kanji, ex[count - 1].kana);
+                MessageBoxW(hwnd, b, "", MB_OK);
+
+
+                LVITEMW item_type = { 0 };
+                item_type.mask = LVIF_TEXT;
+                item_type.iSubItem = 0;
+                item_type.iItem = 0;
+                item_type.pszText = L"type";
+                ListView_InsertItem(hListViewType, &item_type);
+
+
+                for (int i = 0; i < (int)count; i++)
+                {
+                    LVITEMW item = { 0 };
+                    item.mask = LVIF_TEXT;
+                    item.iItem = i;
+                    item.iSubItem = 0;
+                    item.pszText = words[i].kanji;
+                    ListView_InsertItem(hListViewWord, &item);
+
+                    ListView_SetItemText(hListViewWord, i, 1, words[i].kana);
+                    ListView_SetItemText(hListViewWord, i, 2, words[i].meaning);
+                    ListView_SetItemText(hListViewWord, i, 3, words[i].example);
+                }
+
+
                 break;
 
             case 1004 :
@@ -197,14 +230,17 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
 
             case 1009:
             {
+               
                 Word w = (Word){ 0 };
                 readText(hEditKanji, w.kanji, _countof(w.kanji));
                 readText(hEditKana, w.kana, _countof(w.kana));
                 readText(hEditMeaning, w.meaning, _countof(w.meaning));
                 readText(hEditExample, w.example, _countof(w.example));
                 w.type = 0; w.proficiency = 0;
-
+                
+                
                 size_t rc = dict_add(&w);
+
                 if (rc == 0) {
                     int n = dict_count();
                     wchar_t ok[160];
@@ -215,6 +251,7 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                     MessageBoxW(hwnd, dbg, L"登録成功", MB_OK | MB_ICONINFORMATION);
                 
                     dict_save();
+                    
                 }
             }
                 break;

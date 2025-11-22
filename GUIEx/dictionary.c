@@ -4,6 +4,7 @@
 // c에서 static은 파일 내부 전용
 static Word* g_words;
 static size_t g_count = 0;
+static size_t g_capacity = 0;
 
 int dict_init(void) {
 	int is_success = create_csv();
@@ -26,7 +27,14 @@ void dict_shutdown(void) {
 
 int dict_add(const Word* w) {
 	if (!w) return -1;
-	g_words[g_count++] = *w;
+	
+	if (g_count >= g_capacity) {
+		g_capacity = g_count * 2;
+		Word* new_words = realloc(g_words, g_capacity * sizeof(Word));
+		g_words = new_words;
+	}
+	g_words[g_count] = *w;
+	g_count++;
 
 
 	return 0;
