@@ -22,7 +22,7 @@ static HWND searchHWNDs[2];
 #define countRegCtrs    (sizeof(regHWNDs)   / sizeof(regHWNDs[0]))
 #define countSearchCtrs (sizeof(searchHWNDs)/ sizeof(searchHWNDs[0]))
 
-// ===== 내부 헬퍼 함수 선언 (ui.c 전용) =====
+// ===== 내부 헬퍼 함수 선언 =====
 static BOOL readText(HWND h, wchar_t* out, int cap);
 static void setPlaceholder(struct registerCtrs* com);
 static void toggleWindow(HWND arr[], int count, BOOL show);
@@ -31,10 +31,11 @@ static void on_edit_setfocus(HWND hwndCtl);
 static void on_edit_killfocus(HWND hwndCtl);
 static void show_lists(wchar_t* lists);
 static void show_words(void);
+static void hide_words(void);
 static void add_word(HWND hwnd);
 static BOOL listview_contains(HWND hList, const wchar_t* text);
 
-// ====== 공용 엔트리 포인트 (main.c → ui.c로 위임) ======
+// ====== 공용 엔트리 포인트 ======
 
 void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
 {
@@ -248,6 +249,7 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         toggleWindow(mainHWNDs, countMainCtrs, TRUE);
         toggleWindow(regHWNDs, countRegCtrs, FALSE);
         toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
+        hide_words();
         break;
 
     case 1002: // 등록
@@ -336,7 +338,7 @@ static void show_lists(wchar_t* lists)
         line = wcstok_s(NULL, L"\n", &context);
     }
 
-    free(lists); // get_all_lists에서 malloc 했다면 여기서 해제
+    free(lists); 
 }
 
 static void show_words(void)
@@ -362,6 +364,12 @@ static void show_words(void)
     }
 }
 
+static void hide_words(void) {
+    if (hListViewWord) {
+        ListView_DeleteAllItems(hListViewWord);
+    }
+}
+
 static void add_word(HWND hwnd)
 {
     Word w = { 0 };
@@ -379,7 +387,6 @@ static void add_word(HWND hwnd)
         wsprintfW(ok, L"登録しました。（現在 %d 件）", n);
         MessageBoxW(hwnd, ok, L"OK", MB_OK | MB_ICONINFORMATION);
 
-        // 디버그용 메시지박스는 나중에 필요 없으면 지우셔도 됩니다.
         wchar_t dbg[256];
         wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", n, w.kanji, w.kana);
         OutputDebugStringW(dbg);
