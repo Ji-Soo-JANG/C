@@ -83,15 +83,15 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
     toggleWindow(mainHWNDs, countMainCtrs, TRUE);
 
     // 등록 화면 컨트롤
-    hEditKanji = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+    hEditKanji = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 50, 200, 50, hwnd, (HMENU)1005, pcs->hInstance, NULL);
-    hEditKana = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+    hEditKana = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 100, 200, 50, hwnd, (HMENU)1006, pcs->hInstance, NULL);
-    hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+    hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 150, 200, 50, hwnd, (HMENU)1007, pcs->hInstance, NULL);
-    hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER,
+    hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 200, 200, 50, hwnd, (HMENU)1008, pcs->hInstance, NULL);
-    hBtnRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER,
+    hBtnRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 250, 200, 50, hwnd, (HMENU)1009, pcs->hInstance, NULL);
 
     struct registerCtrs cKanji = { hEditKanji,   L"漢字" };
@@ -123,7 +123,7 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
 
     // 조회 화면 컨트롤
     hListViewType = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
-        WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS,
+        WS_CHILD | WS_VISIBLE | LVS_REPORT,
         30, 50, 100, 450, hwnd, (HMENU)2001, pcs->hInstance, NULL);
 
     LVCOLUMNW colType = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
@@ -173,8 +173,7 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
             NMLISTVIEW* pNMLV = (NMLISTVIEW*)lParam;
 
             if ((pNMLV->uChanged & LVIF_STATE) &&
-                (pNMLV->uNewState & LVIS_SELECTED) &&
-                !(pNMLV->uOldState & LVIS_SELECTED)) {
+                (pNMLV->uNewState & LVIS_SELECTED)) {
 
                 int index = pNMLV->iItem;
                 if (index >= 0) {
@@ -246,10 +245,12 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
 
     switch (id) {
     case 1001: // 홈
+        hide_words();
         toggleWindow(mainHWNDs, countMainCtrs, TRUE);
         toggleWindow(regHWNDs, countRegCtrs, FALSE);
         toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
-        hide_words();
+        SetFocus(hwnd);
+
         break;
 
     case 1002: // 등록
@@ -261,6 +262,8 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         for (int i = 0; i < countRegEdits; i++) {
             setPlaceholder(&regStructs[i]);
         }
+        
+        SetFocus(hEditKanji);
         break;
 
     case 1003: { // 조회
@@ -365,6 +368,9 @@ static void show_words(void)
 }
 
 static void hide_words(void) {
+    if (IsWindowVisible(hListViewType)) {
+        ListView_SetItemState(hListViewType, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+    }
     if (hListViewWord) {
         ListView_DeleteAllItems(hListViewWord);
     }
