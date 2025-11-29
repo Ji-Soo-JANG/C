@@ -10,80 +10,49 @@
 
 // 메시지 처리 함수 (닫기 이벤트만 처리)
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    /*wchar_t debug[64];
-    swprintf(debug, 64, L"[msg] 0x%X\n", msg);
-    OutputDebugStringW(debug);  
-    */
-    LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
-
 
     switch (msg) {
-    case WM_CREATE:
-        // 日本語が表示できるフォントを作成
-        createHFont();
-
-        // デバッグパネルを作成
-        createDebugPanel(hwnd, pcs);
-
-        // ホームのボタン作成
-        createBtnHome(hwnd, pcs);
-
-        // 格の機能のボタン作成
-        createBtnMains(hwnd, pcs);
-
-        // 登録画面の要素作成
-        createRegCtrs(hwnd, pcs);
-
-        // 照会画面の要素作成
-        createSearchCtrs(hwnd, pcs);
-
-        dict_init();
-
-        break;
-
-
-    case WM_COMMAND:
-    {
-        int code = HIWORD(wParam); 
-        int id = LOWORD(wParam);
-    /*  wchar_t log[128];
-        wsprintfW(log, L"[WM_COMMAND] id=%d, code=%d\n", id, code);
-        OutputDebugStringW(log);
-     */
-        if (lParam == NULL) {
-            OutputDebugStringW(L"→ lParam is NULL (maybe menu or accelerator)\n");
-        }
-        if(code == BN_CLICKED)
-            clickEvent(hwnd, lParam, code, id);
-
-        if(code == EN_SETFOCUS)
-            setFocusEvent(lParam);
-
-        if (code == EN_KILLFOCUS)
-            killFocusEvent(lParam);
+    case WM_CREATE: {
+        LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
+        UI_OnCreate(hwnd, pcs);      
+        return 0;
     }
-    break;
 
-    default:
-        {
-        const wchar_t* name = GetMessageName(msg);
-        if (name){
-            SetWindowTextW(hDebugPanel, name);
-            }
+    case WM_COMMAND: {
+        int code = HIWORD(wParam);
+        int id = LOWORD(wParam);
+        HWND hCtl = (HWND)lParam;
+
+        UI_OnCommand(hwnd, id, code, hCtl);  
+        return 0;
+    }
+
+    case WM_NOTIFY: {
+        LRESULT result = 0;
+        if (UI_OnNotify(hwnd, wParam, lParam, &result)) {
+            return result;
         }
-        break;
+        break;  
+    }
 
     case WM_DESTROY:
-        if (hFont) {
-            DeleteObject(hFont);
-            hFont = NULL;
-        }
+        UI_OnDestroy();           
         PostQuitMessage(0);
         return 0;
-
+    
+     //debug pannel
+    default: {
+        const wchar_t* name = GetMessageName(msg);
+        if (name) {
+            SetWindowTextW(hDebugPanel, name);
+        }
+        break;
     }
-        return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
+return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 
 // 프로그램 시작점 (GUI용)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,

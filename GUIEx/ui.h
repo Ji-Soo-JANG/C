@@ -1,38 +1,17 @@
-﻿#pragma once
+﻿// ui.h
+#pragma once
 #include <windows.h>
-#include "dictionary.h"
 
-extern HWND hDebugPanel;
-extern HFONT hFont;         
-extern HWND hBtnHome;
-extern HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
-extern HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
-extern HWND hBtnSearch, hListViewType, hListViewWord;
-
-//// ホームのパンネル配列
-extern HWND mainHWNDs[];
-
-// パンネル構造体作成
 struct registerCtrs {
     HWND hwnd;
-    wchar_t name[50];
+    const wchar_t* name;
 };
 
-extern struct registerCtrs regStructs[];
-extern HWND regHWNDs[]; 
-extern HWND searchHWNDs[];
+// main 쪽에서 쓰는 것만 extern
+extern HWND hDebugPanel;
 
-void createDebugPanel(HWND hwnd, LPCREATESTRUCT pcs);             
-void createHFont();
-void createBtnHome(HWND hwnd, LPCREATESTRUCT pcs);
-void createBtnMains(HWND hwnd, LPCREATESTRUCT pcs);
-void createRegCtrs(HWND hwnd, LPCREATESTRUCT pcs);
-void createSearchCtrs(HWND hwnd, LPCREATESTRUCT pcs);
-void clickEvent(HWND hwnd, LPARAM lParam, int code, int id);
-void setFocusEvent(LPARAM lParam);
-void killFocusEvent(LPARAM lParam);
-void setPlaceholder(struct registerCtrs* com);
-void toggleWindow(HWND arr[], int count, BOOL show);
-void show_lists(wchar_t* lists);
-void show_words(Word* words);
-void add_word(HWND hwnd);
+// WndProc에서 호출할 UI 엔트리 포인트
+void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs);
+void UI_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl);
+BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result);
+void UI_OnDestroy(void);
