@@ -7,3 +7,4 @@ int save_all_csv(void);
 int append_csv(const Word* w);
 Word* read_csv(size_t* out_count);
 int create_csv(void);
+wchar_t* get_all_list_names(void);

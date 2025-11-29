@@ -52,3 +52,7 @@ const Word* dict_get(int index) {
 const Word* dict_get_all() {
 	return g_words;
 }
+
+wchar_t* get_all_lists() {
+	return get_all_list_names();
+}

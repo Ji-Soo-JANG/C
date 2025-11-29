@@ -1,6 +1,7 @@
 #include "fileio.h"
 #include <stdio.h>
 
+const wchar_t* directory = L".";
 const wchar_t* save_path = L"words.csv";
 
 int save_all_csv(void) {
@@ -132,3 +133,34 @@ Word* read_csv(size_t* out_count) {
 
 	
 };
+
+wchar_t* get_all_list_names() {
+	wchar_t pattern[MAX_PATH];
+	wsprintfW(pattern, L"%s\\*.csv", directory);
+
+	WIN32_FIND_DATAW fd;
+	HANDLE hFind = FindFirstFileW(pattern, &fd);
+	if (hFind == INVALID_HANDLE_VALUE)
+		return NULL;
+
+	// 2) 임시로 충분히 큰 버퍼 준비 (나중에 malloc으로 복사)
+	wchar_t temp[4096] = L"";
+	
+	do {
+		// 폴더는 제외
+		if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+			wcscat_s(temp, 1024, fd.cFileName);
+			wcscat_s(temp, 1024, L"\n");
+		}
+	} while (FindNextFileW(hFind, &fd));
+	
+	FindClose(hFind);
+
+	// 3) 필요한 크기만큼 malloc 해서 복사
+	size_t len = wcslen(temp) + 1;
+	wchar_t* result = malloc(sizeof(wchar_t) * len);
+	if (!result) return NULL;
+
+	wcscpy_s(result, len, temp);
+	return result;
+}

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <windows.h>
+#include "dictionary.h"
 
 extern HWND hDebugPanel;
 extern HFONT hFont;         
@@ -32,3 +33,6 @@ void setFocusEvent(LPARAM lParam);
 void killFocusEvent(LPARAM lParam);
 void setPlaceholder(struct registerCtrs* com);
 void toggleWindow(HWND arr[], int count, BOOL show);
+void show_lists(wchar_t* lists);
+void show_words(Word* words);
+void add_word(HWND hwnd);

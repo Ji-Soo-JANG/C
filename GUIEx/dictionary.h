@@ -24,6 +24,7 @@ extern "C" {
 	int dict_save(void);
 	const Word* dict_get(int index);
 	const Word* dict_get_all(void);
+	wchar_t* get_all_lists(void);
 
 #ifdef __cplusplus
 }

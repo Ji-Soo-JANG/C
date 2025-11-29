@@ -180,13 +180,16 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 UpdateWindow(hwnd);
                 toggleWindow(searchHWNDs, countSearchCtrs, TRUE);
 
+                
                 words = dict_get_all();
                
-                size_t count = dict_count();
-                wchar_t buf[200];
+                wchar_t* lists = get_all_lists();
+                
+
+                /*wchar_t buf[200];
                 wsprintfW(buf, L"count = %d", count);
                 MessageBoxW(hwnd, buf, L"ok", MB_OK);
-
+                
                 wchar_t b[1000];
 
                 const Word* ex = dict_get_all();
@@ -194,28 +197,13 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
                 wsprintfW(b, L"%s / %s", ex[count - 1].kanji, ex[count - 1].kana);
                 MessageBoxW(hwnd, b, "", MB_OK);
 
-
-                LVITEMW item_type = { 0 };
-                item_type.mask = LVIF_TEXT;
-                item_type.iSubItem = 0;
-                item_type.iItem = 0;
-                item_type.pszText = L"type";
-                ListView_InsertItem(hListViewType, &item_type);
-
-
-                for (int i = 0; i < (int)count; i++)
-                {
-                    LVITEMW item = { 0 };
-                    item.mask = LVIF_TEXT;
-                    item.iItem = i;
-                    item.iSubItem = 0;
-                    item.pszText = words[i].kanji;
-                    ListView_InsertItem(hListViewWord, &item);
-
-                    ListView_SetItemText(hListViewWord, i, 1, words[i].kana);
-                    ListView_SetItemText(hListViewWord, i, 2, words[i].meaning);
-                    ListView_SetItemText(hListViewWord, i, 3, words[i].example);
-                }
+                
+                wsprintfW(b, L"%s", get_all_lists());
+                MessageBoxW(hwnd, b, "", MB_OK);*/
+                
+                show_lists(lists);
+                show_words(words);
+                
 
 
                 break;
@@ -230,29 +218,7 @@ void clickEvent(HWND hwnd, LPARAM lParam, int code, int id) {
 
             case 1009:
             {
-               
-                Word w = (Word){ 0 };
-                readText(hEditKanji, w.kanji, _countof(w.kanji));
-                readText(hEditKana, w.kana, _countof(w.kana));
-                readText(hEditMeaning, w.meaning, _countof(w.meaning));
-                readText(hEditExample, w.example, _countof(w.example));
-                w.type = 0; w.proficiency = 0;
-                
-                
-                size_t rc = dict_add(&w);
-
-                if (rc == 0) {
-                    int n = dict_count();
-                    wchar_t ok[160];
-                    wsprintfW(ok, L"登録しました。（現在 %d 件）", n);
-                    MessageBoxW(hwnd, ok, L"OK", MB_OK | MB_ICONINFORMATION);
-
-                    wchar_t dbg[256]; wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", n, w.kanji, w.kana);
-                    MessageBoxW(hwnd, dbg, L"登録成功", MB_OK | MB_ICONINFORMATION);
-                
-                    dict_save();
-                    
-                }
+                add_word(hwnd);
             }
                 break;
         }
@@ -287,5 +253,77 @@ void killFocusEvent(LPARAM lParam) {
                 setPlaceholder(&regStructs[i]);
             }
         }
+    }
+}
+
+void show_lists(wchar_t* lists) {
+    if (lists == NULL) {
+        // 에러 처리
+        return;
+    }
+
+    wchar_t* context = NULL;
+    wchar_t* line = wcstok_s(lists, L"\n", &context);  // 첫 줄
+    int index = 0;
+
+
+    while (line != NULL) {
+        LVITEMW item = { 0 };
+        item.mask = LVIF_TEXT;
+        item.iItem = index;      // 몇 번째 줄인지
+        item.iSubItem = 0;       // 첫 번째 컬럼
+        item.pszText = line;     // 이 줄의 텍스트 (예: L"file1.csv")
+
+        ListView_InsertItem(hListViewType, &item);
+
+        index++;
+        line = wcstok_s(NULL, L"\n", &context);   // 다음 줄
+    }
+
+    free(lists);   // get_all_lists에서 malloc 했으면 꼭 free
+
+}
+
+void show_words(Word* words) {
+    size_t count = dict_count();
+
+    for (int i = 0; i < (int)count; i++)
+    {
+        LVITEMW item = { 0 };
+        item.mask = LVIF_TEXT;
+        item.iItem = i;
+        item.iSubItem = 0;
+        item.pszText = words[i].kanji;
+        ListView_InsertItem(hListViewWord, &item);
+
+        ListView_SetItemText(hListViewWord, i, 1, words[i].kana);
+        ListView_SetItemText(hListViewWord, i, 2, words[i].meaning);
+        ListView_SetItemText(hListViewWord, i, 3, words[i].example);
+    }
+
+}
+
+void add_word(HWND hwnd) {
+    Word w = (Word){ 0 };
+    readText(hEditKanji, w.kanji, _countof(w.kanji));
+    readText(hEditKana, w.kana, _countof(w.kana));
+    readText(hEditMeaning, w.meaning, _countof(w.meaning));
+    readText(hEditExample, w.example, _countof(w.example));
+    w.type = 0; w.proficiency = 0;
+
+
+    size_t rc = dict_add(&w);
+
+    if (rc == 0) {
+        int n = dict_count();
+        wchar_t ok[160];
+        wsprintfW(ok, L"登録しました。（現在 %d 件）", n);
+        MessageBoxW(hwnd, ok, L"OK", MB_OK | MB_ICONINFORMATION);
+
+        wchar_t dbg[256]; wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", n, w.kanji, w.kana);
+        MessageBoxW(hwnd, dbg, L"登録成功", MB_OK | MB_ICONINFORMATION);
+
+        dict_save();
+
     }
 }
