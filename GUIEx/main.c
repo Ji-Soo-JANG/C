@@ -6,9 +6,7 @@
 #include "ui.h"
 
 
-//HWND hBtnSearch, hListViewType, hListViewWord;
-
-// 메시지 처리 함수 (닫기 이벤트만 처리)
+// main proc
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     switch (msg) {
@@ -53,25 +51,62 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+// EidtProc
+LRESULT CALLBACK EditWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg) {
+    case WM_CREATE:
+        //MessageBox(hwnd, L"ok", "", MB_OK);
+        UI_WordEdit_OnCreate(hwnd, (LPCREATESTRUCT)lParam);
+        return 0;
+
+    case WM_COMMAND: {
+        int code = HIWORD(wParam);
+        int id = LOWORD(wParam);
+        HWND hCtl = (HWND)lParam;
+
+        UI_WordEdit_OnCommand(hwnd, id, code, hCtl);
+        return 0;
+    }
+
+    case WM_DESTROY:
+        return 0;
+    }
+
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
+
+
 
 // 프로그램 시작점 (GUI용)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow) {
 
-    // 창 등록용 최소 설정
-    WNDCLASS wc = { 0 };
+    // 메인 창 클래스
+    WNDCLASSW wc = { 0 };
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = L"BasicWindow";
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    RegisterClassW(&wc);
 
+    // 수정 창 클래스
+    WNDCLASSW wcEdit = { 0 };
+    wcEdit.lpfnWndProc = EditWndProc;
+    wcEdit.hInstance = hInstance;
+    wcEdit.lpszClassName = L"EditWindowClass";
+    wcEdit.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 
-    RegisterClass(&wc);
-
+    if (!RegisterClassW(&wcEdit)) {
+        MessageBoxW(NULL, L"EditWindowClass 등록 실패", L"Error", MB_OK | MB_ICONERROR);
+        return 0;
+    }
+    
     // 창 생성
     HWND hwnd = CreateWindow(
         L"BasicWindow",           // 클래스 이름
-        L"빈 창입니다",            // 창 제목
+        L"日本語単語暗記",            // 창 제목
         WS_OVERLAPPEDWINDOW,     // 창 스타일
         CW_USEDEFAULT, CW_USEDEFAULT, 900, 600,
         NULL, NULL, hInstance, NULL

@@ -96,3 +96,12 @@ int dict_delete(int index) {
 
 	return 0;
 }
+
+int dict_revise(int index, Word* w) {
+	if (index < 0 || index >= g_count)
+		return -1;
+
+	g_words[index] = *w;
+
+	return 0;
+}
