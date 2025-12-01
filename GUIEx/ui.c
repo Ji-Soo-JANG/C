@@ -9,14 +9,14 @@ HFONT hFont;
 
 HWND hBtnHome;
 HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
-HWND hBtnEditWord, hBtnDelteWord, hBtnSaveWord;
+HWND hBtnEditWord, hBtnDelteWord;
 HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
 HWND hBtnSearch, hListViewType, hListViewWord;
 
 static HWND mainHWNDs[3];
 static struct registerCtrs regStructs[4];
 static HWND regHWNDs[5];
-static HWND searchHWNDs[5];
+static HWND searchHWNDs[4];
 
 #define countMainCtrs   (sizeof(mainHWNDs)  / sizeof(mainHWNDs[0]))
 #define countRegEdits   (sizeof(regStructs) / sizeof(regStructs[0]))
@@ -147,21 +147,17 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
     ListView_SetExtendedListViewStyle(hListViewWord, exStyle);
 
     hBtnEditWord = CreateWindowW(L"Button", L"修正", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        430, 500, 100, 50, hwnd, (HMENU)3003, pcs->hInstance, NULL);
+        530, 500, 100, 50, hwnd, (HMENU)3003, pcs->hInstance, NULL);
     hBtnDelteWord = CreateWindowW(L"Button", L"削除", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        530, 500, 100, 50, hwnd, (HMENU)3004, pcs->hInstance, NULL);
-    hBtnSaveWord = CreateWindowW(L"Button", L"貯蔵", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        630, 500, 100, 50, hwnd, (HMENU)3005, pcs->hInstance, NULL);
+        630, 500, 100, 50, hwnd, (HMENU)3004, pcs->hInstance, NULL);
 
     SendMessageW(hBtnEditWord, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hBtnDelteWord, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnSaveWord, WM_SETFONT, (WPARAM)hFont, TRUE);
     
     searchHWNDs[0] = hListViewType;
     searchHWNDs[1] = hListViewWord;
     searchHWNDs[2] = hBtnEditWord;
     searchHWNDs[3] = hBtnDelteWord;
-    searchHWNDs[4] = hBtnSaveWord;
 
     toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
 
@@ -308,23 +304,37 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         add_word(hwnd);
         break;
 
-    case 3003: // 수정 버튼
+    case 3003:{// 수정 버튼
+        
+
+
         /*
         1. 선택된 listView 받아오기(index)
-        2. 새로운 창 생성 - hwnd(Edit - 한자/카나/뜻/예문, Button - 수정/취소) 
+        2. 새로운 창 생성 - hwnd(Edit - 한자/카나/뜻/예문, Button - 수정/취소)
         3. g_words에서 해당 index의 값 변경
         */
         break;
+    } 
+    case 3004: { // 삭제 버튼
+        int wordIdx = ListView_GetNextItem(hListViewWord, -1, LVNI_SELECTED);
+        if (wordIdx == -1) {
+            break;
+        }
 
-    case 3004: // 삭제 버튼
+        int result = MessageBox(hwnd, L"削除しますか", L"削除確認", MB_OKCANCEL);
+        if (result == IDOK) {
+            dict_delete(wordIdx);
+            show_words();
+        }
+        
         /*
         1. 선택된 listView 받아오기(index)
-        2. listView를 제거 - 포커스도 다시 세팅
-        3. listView의 단어를 g_words에서 지우기
+        2. listView의 단어를 g_words에서 지우기
+        3. listView를 제거 - 포커스도 다시 세팅
         4. g_count 다시 세기
         */
         break;
-        
+    }
     case 3005: // 저장 버튼
 
         break;

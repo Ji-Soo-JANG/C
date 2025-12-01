@@ -83,3 +83,16 @@ const Word* dict_get_all() {
 wchar_t* get_all_lists() {
 	return get_all_list_names();
 }
+
+int dict_delete(int index) {
+	if (index < 0 || index >= g_count)
+		return -1;
+
+	for (int i = index; i < g_count - 1; i++) {
+		g_words[i] = g_words[i + 1];
+	}
+
+	g_count--;
+
+	return 0;
+}

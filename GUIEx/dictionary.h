@@ -25,6 +25,7 @@ extern "C" {
 	const Word* dict_get(int index);
 	const Word* dict_get_all(void);
 	wchar_t* get_all_lists(void);
+	int dict_delete(int index);
 
 #ifdef __cplusplus
 }
