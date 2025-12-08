@@ -19,3 +19,7 @@ void UI_OnDestroy(void);
 
 void UI_WordEdit_OnCreate(HWND hwnd, LPCREATESTRUCT pcs);
 void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl);
+
+void create_quiz_page(HWND hwndParent, HINSTANCE hInst);
+void quiz_show(int correctIdx);
+void is_correct(void);

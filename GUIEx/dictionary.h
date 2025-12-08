@@ -27,6 +27,9 @@ extern "C" {
 	wchar_t* get_all_lists(void);
 	int dict_delete(int index);
 	int dict_revise(int index, Word* w);
+	void dict_mix(void);
+	void plus_proficiency(int index);
+	void minus_proficiency(int index);
 
 #ifdef __cplusplus
 }

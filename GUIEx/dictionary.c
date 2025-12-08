@@ -105,3 +105,29 @@ int dict_revise(int index, Word* w) {
 
 	return 0;
 }
+
+void dict_mix() {
+	if (g_count <= 1) return;
+
+	static int seeded = 0;
+	if (!seeded) {
+		srand((unsigned int)time(NULL));
+		seeded = 1;
+	}
+
+	for (size_t i = g_count - 1; i > 0; i--) {
+		size_t j = (size_t)(rand() % (int)(i + 1));
+
+		Word tmp = g_words[i];
+		g_words[i] = g_words[j];
+		g_words[j] = tmp;
+	}
+}
+
+void plus_proficiency(int index) {
+	g_words[index].proficiency++;
+}
+
+void minus_proficiency(int index) {
+	g_words[index].proficiency--;
+}

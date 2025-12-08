@@ -13,18 +13,24 @@ HWND hBtnEditWord, hBtnDelteWord;
 HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
 HWND hBtnSearch, hListViewType, hListViewWord;
 HWND hWndEditKanji, hWndEditKana, hWndEditMeaning, hWndEditExample, hWndBtnSave, hWndBtnCancle;
+HWND hQuizQuestion, hQuizOptionBtn[4], hQuizResult, hQuizNextBtn;
 
 static HWND mainHWNDs[3];
 static struct registerCtrs regStructs[4];
 static HWND regHWNDs[5];
 static HWND searchHWNDs[4];
 static HWND editHWNDs[6];
+static HWND quizHWNDs[7];
+static int correctPos, chosenPos;
+static int optionIdxs[4];
+static int quiz_current = 0;
 
 #define countMainCtrs   (sizeof(mainHWNDs)  / sizeof(mainHWNDs[0]))
 #define countRegEdits   (sizeof(regStructs) / sizeof(regStructs[0]))
 #define countRegCtrs    (sizeof(regHWNDs)   / sizeof(regHWNDs[0]))
 #define countSearchCtrs (sizeof(searchHWNDs)/ sizeof(searchHWNDs[0]))
-#define countEditCtrs (sizeof(searchHWNDs)/ sizeof(searchHWNDs[0]))
+#define countEditCtrs (sizeof(editHWNDs)/ sizeof(editHWNDs[0]))
+#define countQuizCtrs (sizeof(quizHWNDs)/ sizeof(quizHWNDs[0]))
 
 static HINSTANCE g_hInst = NULL;
 
@@ -272,6 +278,7 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         toggleWindow(mainHWNDs, countMainCtrs, TRUE);
         toggleWindow(regHWNDs, countRegCtrs, FALSE);
         toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
+        toggleWindow(quizHWNDs, countQuizCtrs, FALSE);
         SetFocus(hwnd);
 
         break;
@@ -304,7 +311,26 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         toggleWindow(mainHWNDs, countMainCtrs, FALSE);
         InvalidateRect(hwnd, NULL, TRUE);
         UpdateWindow(hwnd);
-        toggleWindow(searchHWNDs, 1, TRUE);
+        toggleWindow(searchHWNDs, 1, FALSE);
+
+        quiz_current = 0;
+        if (dict_count() < 4) {
+            MessageBoxW(hwnd, L"少なくても４つ以上の単語を登録してください。", L"最小単語不足", MB_OK);
+            hide_words();
+            toggleWindow(mainHWNDs, countMainCtrs, TRUE);
+            toggleWindow(regHWNDs, countRegCtrs, FALSE);
+            toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
+            toggleWindow(quizHWNDs, countQuizCtrs, FALSE);
+            SetFocus(hwnd);
+
+            break;
+        }
+
+        create_quiz_page(hwnd, g_hInst);
+        toggleWindow(quizHWNDs, countQuizCtrs, TRUE);
+        dict_mix();
+        quiz_show(quiz_current);
+
         break;
 
     case 2005: // 단어 등록 버튼
@@ -363,10 +389,32 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         
         break;
     }
-    case 3005: // 저장 버튼
-
+    case 4100:
+        chosenPos = optionIdxs[0];
+        is_correct();
         break;
-    }
+
+    case 4101:
+        chosenPos = optionIdxs[1];
+        is_correct();
+        break;
+
+    case 4102:
+        chosenPos = optionIdxs[2];
+        is_correct();
+        break;
+
+    case 4103:
+        chosenPos = optionIdxs[3];
+        is_correct();
+        break;
+
+    case 4200:
+        quiz_show(++quiz_current);
+        SetWindowTextW(hQuizResult, L"");
+        break;
+}
+    
 
 
 }
@@ -605,5 +653,131 @@ void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl) {
         return 0;
         // eidt창 없애기
 
+    }
+}
+
+void create_quiz_page(HWND hwndParent, HINSTANCE hInst)
+{
+    // 질문 영역
+    if (!hQuizQuestion) {
+        hQuizQuestion = CreateWindowExW(
+            0, L"STATIC",
+            L"ここに問題が表示されます。",
+            WS_CHILD | WS_VISIBLE | SS_CENTER,
+            130, 50, 600, 40,
+            hwndParent, (HMENU)4001, hInst, NULL
+        );
+
+        int x1 = 150, x2 = 450;
+        int y1 = 120, y2 = 180;
+        int w = 250, h = 40;
+
+        hQuizOptionBtn[0] = CreateWindowExW(
+            0, L"BUTTON", L"選択肢1",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            x1, y1, w, h,
+            hwndParent, (HMENU)4100, hInst, NULL
+        );
+        hQuizOptionBtn[1] = CreateWindowExW(
+            0, L"BUTTON", L"選択肢2",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            x2, y1, w, h,
+            hwndParent, (HMENU)4101, hInst, NULL
+        );
+        hQuizOptionBtn[2] = CreateWindowExW(
+            0, L"BUTTON", L"選択肢3",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            x1, y2, w, h,
+            hwndParent, (HMENU)4102, hInst, NULL
+        );
+        hQuizOptionBtn[3] = CreateWindowExW(
+            0, L"BUTTON", L"選択肢4",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            x2, y2, w, h,
+            hwndParent, (HMENU)4103, hInst, NULL
+        );
+
+        // 결과 표시
+        hQuizResult = CreateWindowExW(
+            0, L"STATIC", L"",
+            WS_CHILD | WS_VISIBLE | SS_CENTER,
+            130, 240, 600, 30,
+            hwndParent, (HMENU)4002, hInst, NULL
+        );
+
+        // 다음 문제 버튼
+        hQuizNextBtn = CreateWindowExW(
+            0, L"BUTTON", L"次の問題",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            350, 280, 150, 35,
+            hwndParent, (HMENU)4200, hInst, NULL
+        );
+
+        quizHWNDs[0] = hQuizQuestion;
+        quizHWNDs[1] = hQuizOptionBtn[0];
+        quizHWNDs[2] = hQuizOptionBtn[1];
+        quizHWNDs[3] = hQuizOptionBtn[2];
+        quizHWNDs[4] = hQuizOptionBtn[3];
+        quizHWNDs[5] = hQuizResult;
+        quizHWNDs[6] = hQuizNextBtn;
+
+        for (int i = 0; i < 7; i++) {
+            SendMessageW(quizHWNDs[i], WM_SETFONT, (WPARAM)hFont, TRUE);
+        }
+    }
+}
+
+void quiz_show(int correctIdx) {
+    int count = dict_count();
+    
+    if (correctIdx >= count) {
+        return;
+    }
+
+    correctPos = correctIdx;
+
+    const Word* words = dict_get_all();
+    SetWindowTextW(hQuizQuestion, words[correctIdx].kanji);
+
+    optionIdxs[3] = correctIdx;
+
+    for (int i = 0; i < 3; i++) {
+        while (1) {
+            int r = rand() % count;
+            if (r == correctIdx) continue;
+
+            BOOL dup = FALSE;
+            for (int j = 0; j < i; j++) {
+                if (optionIdxs[j] == r) {
+                    dup = TRUE;
+                    break;
+                }
+            }
+            if (dup) continue;
+
+            optionIdxs[i] = r;
+            break;
+        }
+    }
+
+    for (int i = 3; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int t = optionIdxs[i];
+        optionIdxs[i] = optionIdxs[j];
+        optionIdxs[j] = t;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        SetWindowTextW(hQuizOptionBtn[i], dict_get(optionIdxs[i])->kana);
+    }
+}
+void is_correct() {
+    if (chosenPos == correctPos) {
+        SetWindowTextW(hQuizResult, L"正解です！");
+        plus_proficiency(correctPos);
+    }
+    else {
+        SetWindowTextW(hQuizResult, L"残念…");
+        minus_proficiency(correctPos);
     }
 }
