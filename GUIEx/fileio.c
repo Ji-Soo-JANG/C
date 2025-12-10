@@ -1,10 +1,12 @@
 #include "fileio.h"
 #include <stdio.h>
 
-const wchar_t* directory = L".";
-const wchar_t* save_path = L"words.csv";
+const wchar_t* directory = L".\\words";
+const wchar_t* save_path = L".\\words\\words.csv";
 
 int save_all_csv(void) {
+	CreateDirectoryW(L".\\words", NULL);
+
 	FILE* fp;
 	if (_wfopen_s(&fp, save_path, L"w, ccs=UTF-8") != 0) {
 		return -1;

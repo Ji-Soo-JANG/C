@@ -57,7 +57,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg) {
     case WM_CREATE:
         //MessageBox(hwnd, L"ok", "", MB_OK);
-        UI_WordEdit_OnCreate(hwnd, (LPCREATESTRUCT)lParam);
+        UI_Word_OnCreate(hwnd, (LPCREATESTRUCT)lParam);
         return 0;
 
     case WM_COMMAND: {

@@ -17,7 +17,8 @@ void UI_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl);
 BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result);
 void UI_OnDestroy(void);
 
-void UI_WordEdit_OnCreate(HWND hwnd, LPCREATESTRUCT pcs);
+void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs);
+void UI_Word_Set(int wordIdx);
 void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl);
 
 void create_quiz_page(HWND hwndParent, HINSTANCE hInst);
