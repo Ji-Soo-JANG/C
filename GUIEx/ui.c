@@ -103,7 +103,7 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
         50, 100, 200, 50, hwnd, (HMENU)2002, pcs->hInstance, NULL);
     hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 150, 200, 50, hwnd, (HMENU)2003, pcs->hInstance, NULL);
-    hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
+    hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_LEFT | ES_AUTOHSCROLL,
         50, 200, 200, 50, hwnd, (HMENU)2004, pcs->hInstance, NULL);
     hBtnRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
         50, 250, 200, 50, hwnd, (HMENU)2005, pcs->hInstance, NULL);
@@ -596,7 +596,7 @@ void UI_WordEdit_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
         xLabel, y, 80, height, hwnd, NULL, pcs->hInstance, NULL);
 
     hWndEditExample = CreateWindowW(L"Edit", NULL,
-        WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
+        WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_LEFT | ES_AUTOHSCROLL,
         xEdit, y, 150, height,
         hwnd, (HMENU)3014, pcs->hInstance, NULL);
 
