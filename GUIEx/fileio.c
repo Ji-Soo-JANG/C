@@ -12,7 +12,7 @@ int save_all_csv(void) {
 
 	for (int i = 0; i < dict_count(); i++) {
 		const Word* w = dict_get(i);
-		fwprintf(fp, L"%s,%s,%s,%s,%d,%d\n", w->kanji, w->kana, w->meaning, w->example, w->proficiency, w->type);
+		fwprintf(fp, L"%ls,%ls,%ls,%ls,%d,%d\n", w->kanji, w->kana, w->meaning, w->example, w->proficiency, w->type);
 	}
 
 	fclose(fp);
@@ -74,38 +74,35 @@ Word* read_csv(size_t* out_count) {
 	Word* words = malloc(sizeof(Word) * count);
 	if (!words) {
 		fclose(fp);
-		*out_count = 0;
+		if (out_count) *out_count = 0;
 		return NULL;
 	}
 
 	// word에 값 저장, words에 저장
 	size_t idx = 0;
-	while (fgetws(line, 256, fp) != NULL){
+	while (fgetws(line, _countof(line), fp) != NULL){
 		line[wcscspn(line, L"\r\n")] = L'\0';
 		if (line[0] == L'\0') {
 			continue;  
 		}
 
 		wchar_t* ctx = NULL;
-		wchar_t* token = wcstok(line, L",", &ctx);
+		wchar_t* token = wcstok_s(line, L",", &ctx);
 		Word word = { 0 };
 		if (token) {
-			wcsncpy_s(word.kanji, 128, token, 127);
-			word.kanji[127] = L'\0';
+			wcsncpy_s(word.kanji, _countof(word.kanji), token, _TRUNCATE);
 			token = wcstok_s(NULL, L",", &ctx);
 		}
 		if (token) {
-			wcsncpy_s(word.kana, 128, token, 127);
-			word.kana[127] = L'\0';
+			wcsncpy_s(word.kana, _countof(word.kana), token, _TRUNCATE);
 			token = wcstok_s(NULL, L",", &ctx);
 		}
 		if (token) {
-			wcsncpy_s(word.meaning, 128, token, 255);
-			word.meaning[255] = L'\0';
+			wcsncpy_s(word.meaning, _countof(word.meaning), token, _TRUNCATE);
 			token = wcstok_s(NULL, L",", &ctx);
 		}
 		if (token) {
-			word.type = _wtoi(token);
+			wcsncpy_s(word.example, _countof(word.example), token, _TRUNCATE);
 			token = wcstok_s(NULL, L",", &ctx);
 		}
 		if (token) {
@@ -113,10 +110,10 @@ Word* read_csv(size_t* out_count) {
 			token = wcstok_s(NULL, L",", &ctx);
 		}
 		if (token) {
-			wcsncpy_s(word.example, 256, token, 255);
-			word.example[255] = L'\0';
+			word.type = _wtoi(token);
 			token = wcstok_s(NULL, L",", &ctx);
 		}
+		
 
 		words[idx] = word;
 		idx++;
@@ -143,14 +140,14 @@ wchar_t* get_all_list_names() {
 	if (hFind == INVALID_HANDLE_VALUE)
 		return NULL;
 
-	// 2) 임시로 충분히 큰 버퍼 준비 (나중에 malloc으로 복사)
+	// 2) 임시 버퍼 
 	wchar_t temp[4096] = L"";
 	
 	do {
 		// 폴더는 제외
 		if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			wcscat_s(temp, 1024, fd.cFileName);
-			wcscat_s(temp, 1024, L"\n");
+			wcscat_s(temp, _countof(temp), fd.cFileName);
+			wcscat_s(temp, _countof(temp), L"\n");
 		}
 	} while (FindNextFileW(hFind, &fd));
 	
