@@ -2,6 +2,7 @@
 #include "fileio.h"
 
 // c에서 static은 파일 내부 전용
+static wchar_t* g_csv;
 static Word* g_words;
 static size_t g_count = 0;
 static size_t g_capacity = 4;
@@ -11,26 +12,32 @@ int dict_init(void) {
 	if (!is_success) {
 		return 0;
 	}
+	return 1;
+}
 
-	g_words = read_csv(&g_count);  
+int dict_save(void) {
+	return save_all_csv(g_csv);
+}
+
+void set_dict(wchar_t* list){
+	g_csv = list;
+	wchar_t buf[256];
+	wsprintfW(buf, L"%ls\n", g_csv);
+	OutputDebugStringW(buf);
+
+	g_words = read_csv(g_csv, &g_count);
 
 	if (g_count > 0) {
 		g_capacity = g_count;
 	}
 	else {
-		g_capacity = 4;  
+		g_capacity = 4;
 		g_words = malloc(g_capacity * sizeof(Word));
 		if (!g_words) {
 			g_capacity = 0;
 			return 0;
 		}
 	}
-
-	return 1;
-}
-
-int dict_save(void) {
-	return save_all_csv();
 }
 
 void dict_shutdown(void) {

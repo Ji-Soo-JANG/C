@@ -1,6 +1,7 @@
 ﻿#include "ui.h"
 #include "dictionary.h"
 #include <CommCtrl.h>
+#include <stdio.h>
 #pragma comment(lib, "Comctl32.lib")
 
 // ===== 전역 UI 핸들 =====
@@ -46,7 +47,7 @@ static void on_edit_killfocus(HWND hwndCtl);
 static void show_lists(wchar_t* lists);
 static void show_words(void);
 static void hide_words(void);
-static void add_word(HWND hwnd);
+static void add_word(wchar_t* list);
 static BOOL listview_contains(HWND hList, const wchar_t* text);
 
 // ====== 공용 엔트리 포인트 ======
@@ -219,6 +220,10 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
                     wchar_t buf[256];
                     ListView_GetItemText(hListViewType, index, 0, buf, 256);
                     wcsncpy_s(g_currentListName, _countof(g_currentListName), buf, _TRUNCATE);
+                    /*wchar_t deb[256];
+                    wsprintfW(deb, L"list : %ls\n", g_currentListName);
+                    OutputDebugStringW(deb);*/
+                    set_dict(g_currentListName);
                     show_words();
 
                 }
@@ -345,10 +350,10 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         break;
 
     case 2005: // 단어 등록 버튼
-        add_word(hwnd);
+        //add_word(hwnd);
         break;
 
-    case 3003: {
+    case 3003: { // 추가 버튼
         int wordIdx = -1;
 
         HWND hEditWnd = CreateWindowExW(
@@ -542,27 +547,22 @@ static void hide_words(void) {
     }
 }
 
-static void add_word(HWND hwnd)
+static void add_word(wchar_t* list)
 {
+    dict_save();
+    set_dict(list);
+
     Word new_words = { 0 };
-    readText(hEditKanji, new_words.kanji, _countof(new_words.kanji));
-    readText(hEditKana, new_words.kana, _countof(new_words.kana));
-    readText(hEditMeaning, new_words.meaning, _countof(new_words.meaning));
-    readText(hEditExample, new_words.example, _countof(new_words.example));
+    readText(hWndEditKanji, new_words.kanji, _countof(new_words.kanji));
+    readText(hWndEditKana, new_words.kana, _countof(new_words.kana));
+    readText(hWndEditMeaning, new_words.meaning, _countof(new_words.meaning));
+    readText(hWndEditExample, new_words.example, _countof(new_words.example));
     new_words.type = 0;
     new_words.proficiency = 0;
 
     int add_result = dict_add(&new_words);
     if (add_result == 0) {
         int current_count = (int)dict_count();
-        wchar_t msg_buffer[160];
-        wsprintfW(msg_buffer, L"登録しました。（現在 %d 件）", current_count);
-        MessageBoxW(hwnd, msg_buffer, L"OK", MB_OK | MB_ICONINFORMATION);
-
-        //wchar_t dbg[256];
-        //wsprintfW(dbg, L"[登録OK] count=%d, last=%s / %s\n", current_count, new_words.kanji, new_words.kana);
-        //OutputDebugStringW(dbg);
-
         dict_save();
     }
 }
@@ -713,12 +713,6 @@ void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
     int btnXOk = centerX - (btnWidth + btnGapX / 2);
     int btnXCancel = centerX + (btnGapX / 2);
 
-    hWndBtnCancle = CreateWindowW(
-        L"Button", L"キャンセル",
-        WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        btnXCancel, btnY, btnWidth, btnHeight,
-        hwnd, (HMENU)3017, pcs->hInstance, NULL
-    );
     hWndBtnAdd = CreateWindowW(
         L"Button", L"追加",
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
@@ -731,6 +725,17 @@ void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
         btnXOk, btnY, btnWidth, btnHeight,
         hwnd, (HMENU)3016, pcs->hInstance, NULL
     );
+    hWndBtnCancle = CreateWindowW(
+        L"Button", L"キャンセル",
+        WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
+        btnXCancel, btnY, btnWidth, btnHeight,
+        hwnd, (HMENU)3017, pcs->hInstance, NULL
+    );
+
+    int idx = (int)SendMessageW(hWndListCombo, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)g_currentListName);
+    if (idx != CB_ERR) {
+        SendMessageW(hWndListCombo, CB_SETCURSEL, idx, 0);
+    }
 
     if (isAddMode) {
         ShowWindow(hWndBtnAdd, SW_SHOW);
@@ -746,11 +751,6 @@ void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
         ShowWindow(hWndBtnSave, SW_SHOW);
 
         // g_currentListName 과 일치하는 항목을 콤보에서 찾기
-        int idx = (int)SendMessageW(hWndListCombo, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)g_currentListName);
-
-        if (idx != CB_ERR) {
-            SendMessageW(hWndListCombo, CB_SETCURSEL, idx, 0);
-        }
 
         EnableWindow(hWndListCombo, FALSE);
 
@@ -793,16 +793,25 @@ void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl) {
     newWord.proficiency = 0;
 
     switch (id) {
-    case 3016:
-        // 수정한거 저장
-        //MessageBoxW(hwnd, "", buf, MB_OK);
+    case 3015: { // 추가
+        int idx = (int)SendMessageW(hWndListCombo, CB_GETCURSEL, 0, 0);
+        int len = (int)SendMessage(hWndListCombo, CB_GETLBTEXTLEN, idx, 0);
+        wchar_t* list = malloc((len + 1) * sizeof(wchar_t));
+        SendMessage(hWndListCombo, CB_GETLBTEXT, idx, (LPARAM)list);
+
+        add_word(list);
+        show_words();
+        DestroyWindow(hwnd);
+        break;
+    }
+    case 3016: // 수정
         if (dict_revise(wordIdx, &newWord) == 0) {
             dict_save();
-            show_words();     // 메인창 리스트 갱신
+            show_words();     
         }
         DestroyWindow(hwnd);
         break;
-    case 3017:
+    case 3017: // 취소
         DestroyWindow(hwnd);
         return 0;
         // eidt창 없애기

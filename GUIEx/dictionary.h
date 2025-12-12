@@ -22,6 +22,7 @@ extern "C" {
 	int dict_add(const Word* w);
 	size_t dict_count(void);
 	int dict_save(void);
+	void set_dict(wchar_t* list);
 	const Word* dict_get(int index);
 	const Word* dict_get_all(void);
 	wchar_t* get_all_lists(void);

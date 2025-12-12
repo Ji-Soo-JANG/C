@@ -4,11 +4,13 @@
 const wchar_t* directory = L".\\words";
 const wchar_t* save_path = L".\\words\\words.csv";
 
-int save_all_csv(void) {
-	CreateDirectoryW(L".\\words", NULL);
+int save_all_csv(wchar_t* path) {
+	wchar_t full_path[256];
+	wsprintfW(full_path, L"%ls\\%ls", directory, path);
+	CreateDirectoryW(full_path, NULL);
 
 	FILE* fp;
-	if (_wfopen_s(&fp, save_path, L"w, ccs=UTF-8") != 0) {
+	if (_wfopen_s(&fp, full_path, L"w, ccs=UTF-8") != 0) {
 		return -1;
 	}
 
@@ -18,9 +20,6 @@ int save_all_csv(void) {
 	}
 
 	fclose(fp);
-	return 0;
-};
-int append_csv(const Word* w) {
 	return 0;
 };
 
@@ -47,10 +46,16 @@ int create_csv(void) {
 	3. 다시 파일을 읽으면서 words에 word 구조체를 채워넣음
 	4. words의 주소를 반환
 */
-Word* read_csv(size_t* out_count) {
+Word* read_csv(wchar_t* path, size_t* out_count) {
+	wchar_t full_path[256];
+	wsprintfW(full_path, L"%ls\\%ls", directory, path);
+	//OutputDebugStringW(full_path);
+
 	FILE* fp;
-	if (_wfopen_s(&fp, save_path, L"r, ccs=UTF-8") != 0 || fp == NULL) {
-		if (out_count) *out_count = 0;
+	if (_wfopen_s(&fp, full_path, L"r, ccs=UTF-8") != 0 || fp == NULL) {
+		if (out_count) {
+			*out_count = 0;
+		}
 		return NULL;
 	};
 	
@@ -62,7 +67,8 @@ Word* read_csv(size_t* out_count) {
 		if (line[0] != L'\n' && line[0] != L'\r' && line[0] != L'\0')
 			count++;
 	}
-	
+
+
 	// fp를 맨 처음으로 돌림
 	fseek(fp, 0, SEEK_SET);
 
