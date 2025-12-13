@@ -7,14 +7,6 @@ static Word* g_words;
 static size_t g_count = 0;
 static size_t g_capacity = 4;
 
-int dict_init(void) {
-	int is_success = create_csv();
-	if (!is_success) {
-		return 0;
-	}
-	return 1;
-}
-
 int dict_save(void) {
 	return save_all_csv(g_csv);
 }
@@ -137,4 +129,8 @@ void plus_proficiency(int index) {
 
 void minus_proficiency(int index) {
 	g_words[index].proficiency--;
+}
+
+void new_dict(wchar_t* name){
+	create_csv(name);
 }

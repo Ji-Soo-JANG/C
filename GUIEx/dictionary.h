@@ -17,7 +17,6 @@ extern "C" {
 		wchar_t example[256];
 	} Word;
 
-	int dict_init(void);
 	void dict_shutdown(void);
 	int dict_add(const Word* w);
 	size_t dict_count(void);
@@ -31,6 +30,7 @@ extern "C" {
 	void dict_mix(void);
 	void plus_proficiency(int index);
 	void minus_proficiency(int index);
+	void new_dict(wchar_t* name);
 
 #ifdef __cplusplus
 }

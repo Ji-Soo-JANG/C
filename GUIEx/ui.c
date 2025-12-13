@@ -12,7 +12,7 @@ HWND hBtnHome;
 HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
 HWND hBtnAddWords,hBtnEditWord, hBtnDelteWord, hBtnShowQuiz;
 HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
-HWND hBtnSearch, hListViewType, hListViewWord;
+HWND hBtnSearch, hListViewList, hListViewWord;
 HWND hWndEditKanji, hWndEditKana, hWndEditMeaning, hWndEditExample, hWndBtnAdd, hWndBtnSave, hWndBtnCancle, hWndListCombo;
 HWND hQuizQuestion, hQuizOptionBtn[4], hQuizResult, hQuizNextBtn;
 
@@ -139,14 +139,14 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
     toggleWindow(regHWNDs, countRegCtrs, FALSE);
 
     // 조회 화면 컨트롤
-    hListViewType = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
-        WS_CHILD | WS_VISIBLE | LVS_REPORT,
+    hListViewList = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
+        WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_EDITLABELS,
         30, 50, 100, 450, hwnd, (HMENU)3001, pcs->hInstance, NULL);
 
     LVCOLUMNW colType = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
     colType.cx = 100;
     colType.pszText = L"リスト";
-    ListView_InsertColumn(hListViewType, 0, &colType);
+    ListView_InsertColumn(hListViewList, 0, &colType);
 
     hListViewWord = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
         WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS,
@@ -176,7 +176,7 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
     SendMessageW(hBtnDelteWord, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hBtnShowQuiz, WM_SETFONT, (WPARAM)hFont, TRUE);
     
-    searchHWNDs[0] = hListViewType;
+    searchHWNDs[0] = hListViewList;
     searchHWNDs[1] = hListViewWord;
     searchHWNDs[2] = hBtnAddWords;
     searchHWNDs[3] = hBtnEditWord;
@@ -184,9 +184,6 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
     searchHWNDs[5] = hBtnShowQuiz;
 
     toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
-
-    // 사전 초기화
-    dict_init();
 }
 
 void UI_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl)
@@ -207,31 +204,62 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
     LPNMHDR pNMHDR = (LPNMHDR)lParam;
 
     // 리스트 이름 리스트뷰에서 온 통지인지
-    if (pNMHDR->hwndFrom == hListViewType) {
+    if (pNMHDR->hwndFrom == hListViewList) {
+        NMLISTVIEW* pNMLV = (NMLISTVIEW*)lParam;
+        int index = pNMLV->iItem;
+        int count = ListView_GetItemCount(hListViewList);
+        int plusIdx = count - 1;
 
-        if (pNMHDR->code == LVN_ITEMCHANGED) {
-            NMLISTVIEW* pNMLV = (NMLISTVIEW*)lParam;
-
+        if (pNMHDR->code == LVN_ITEMCHANGED) { 
             if ((pNMLV->uChanged & LVIF_STATE) &&
                 (pNMLV->uNewState & LVIS_SELECTED)) {
 
-                int index = pNMLV->iItem;
-                if (index >= 0) {
+                if (index >= 0 && index != plusIdx) {
                     wchar_t buf[256];
-                    ListView_GetItemText(hListViewType, index, 0, buf, 256);
+                    ListView_GetItemText(hListViewList, index, 0, buf, 256);
                     wcsncpy_s(g_currentListName, _countof(g_currentListName), buf, _TRUNCATE);
                     /*wchar_t deb[256];
                     wsprintfW(deb, L"list : %ls\n", g_currentListName);
                     OutputDebugStringW(deb);*/
                     set_dict(g_currentListName);
                     show_words();
-
                 }
             }
+            *result = 0;
+            return TRUE;
 
+        }
+
+        if (pNMHDR->code == LVN_ITEMACTIVATE) {
+            if (index == plusIdx) {
+                ListView_EditLabel(hListViewList, index);
+            }
             *result = 0;
             return TRUE;
         }
+
+        if (pNMHDR->code == LVN_ENDLABELEDIT) {
+            NMLVDISPINFOW* info = (NMLVDISPINFOW*)lParam;
+            HWND hList = hListViewList;
+            const wchar_t* name = info->item.pszText;
+
+            if (info->item.pszText == NULL || info->item.pszText[0] == L'\0') {
+                *result = FALSE;
+                return TRUE;
+            }
+
+            new_dict(name);
+
+            wcsncpy_s(g_currentListName, _countof(g_currentListName), name, _TRUNCATE);
+            set_dict(g_currentListName);
+            wchar_t* lists = get_all_lists();
+            show_lists(lists);
+
+            //OutputDebugStringW(name);
+
+
+        }
+
     }
 
     return FALSE;
@@ -495,24 +523,42 @@ static void on_edit_killfocus(HWND hwndCtl)
 static void show_lists(wchar_t* lists)
 {
     if (!lists) return;
+    ListView_DeleteAllItems(hListViewList);
 
     wchar_t* context = NULL;
     wchar_t* line = wcstok_s(lists, L"\n", &context);
 
     while (line != NULL) {
-        if (!listview_contains(hListViewType, line)) {
+        if (!listview_contains(hListViewList, line)) {
             LVITEMW item = { 0 };
             item.mask = LVIF_TEXT;
-            item.iItem = ListView_GetItemCount(hListViewType);
+            item.iItem = ListView_GetItemCount(hListViewList);
             item.iSubItem = 0;
             item.pszText = line;
 
-            ListView_InsertItem(hListViewType, &item);
+            ListView_InsertItem(hListViewList, &item);
         }
         line = wcstok_s(NULL, L"\n", &context);
     }
 
     free(lists); 
+
+    int count = ListView_GetItemCount(hListViewList);
+    if (count > 0) {
+        wchar_t buf[256];
+        ListView_GetItemText(hListViewList, count - 1, 0, buf, 256);
+
+        if (wcscmp(buf, L"+ 新しいリスト") == 0) {
+            return;
+        }
+    }
+
+    LVITEMW item = { 0 };
+    item.mask = LVIF_TEXT;
+    item.iItem = ListView_GetItemCount(hListViewList);
+    item.iSubItem = 0;
+    item.pszText = L"+ 新しいリスト";
+    ListView_InsertItem(hListViewList, &item);
 }
 
 static void show_words(void)
@@ -539,8 +585,8 @@ static void show_words(void)
 }
 
 static void hide_words(void) {
-    if (IsWindowVisible(hListViewType)) {
-        ListView_SetItemState(hListViewType, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+    if (IsWindowVisible(hListViewList)) {
+        ListView_SetItemState(hListViewList, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     }
     if (hListViewWord) {
         ListView_DeleteAllItems(hListViewWord);

@@ -23,10 +23,13 @@ int save_all_csv(wchar_t* path) {
 	return 0;
 };
 
-int create_csv(void) {
+int create_csv(wchar_t* path) {
+	wchar_t full_path[256];
+	wsprintfW(full_path, L"%ls\\%ls.csv", directory, path);
+
 	FILE* fp;
-	if (_wfopen_s(&fp, save_path, L"r, ccs=UTF-8") != 0) {
-		if (_wfopen_s(&fp, save_path, L"w, ccs=UTF-8") == 0) {
+	if (_wfopen_s(&fp, full_path, L"r, ccs=UTF-8") != 0) {
+		if (_wfopen_s(&fp, full_path, L"w, ccs=UTF-8") == 0) {
 			fclose(fp);
 			return 1;
 		}
