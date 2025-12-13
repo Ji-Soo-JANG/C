@@ -32,10 +32,6 @@ void set_dict(wchar_t* list){
 	}
 }
 
-void dict_shutdown(void) {
-	// csv 파일 등록
-}
-
 int dict_add(const Word* w) {
 	if (!w) return -1;
 

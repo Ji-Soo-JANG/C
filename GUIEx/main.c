@@ -12,29 +12,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CREATE: {
         LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
-        UI_OnCreate(hwnd, pcs);      
+        ui_on_create(hwnd, pcs);      
         return 0;
     }
 
     case WM_COMMAND: {
         int code = HIWORD(wParam);
         int id = LOWORD(wParam);
-        HWND hCtl = (HWND)lParam;
+        HWND ctl = (HWND)lParam;
 
-        UI_OnCommand(hwnd, id, code, hCtl);  
+        ui_on_command(hwnd, id, code, ctl);  
         return 0;
     }
 
     case WM_NOTIFY: {
         LRESULT result = 0;
-        if (UI_OnNotify(hwnd, wParam, lParam, &result)) {
+        if (ui_on_notify(hwnd, wParam, lParam, &result)) {
             return result;
         }
         break;  
     }
 
     case WM_DESTROY:
-        UI_OnDestroy();           
+        ui_on_destroy();           
         PostQuitMessage(0);
         return 0;
     
@@ -42,7 +42,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     default: {
         const wchar_t* name = GetMessageName(msg);
         if (name) {
-            SetWindowTextW(hDebugPanel, name);
+            SetWindowTextW(debug_panel, name);
         }
         break;
     }
@@ -52,20 +52,20 @@ return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 // EidtProc
-LRESULT CALLBACK EditWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK EditWndProc(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param)
 {
     switch (msg) {
     case WM_CREATE:
         //MessageBox(hwnd, L"ok", "", MB_OK);
-        UI_Word_OnCreate(hwnd, (LPCREATESTRUCT)lParam);
+        ui_word_on_create(hwnd, (LPCREATESTRUCT)l_param);
         return 0;
 
     case WM_COMMAND: {
-        int code = HIWORD(wParam);
-        int id = LOWORD(wParam);
-        HWND hCtl = (HWND)lParam;
+        int code = HIWORD(w_param);
+        int id = LOWORD(w_param);
+        HWND hCtl = (HWND)l_param;
 
-        UI_WordEdit_OnCommand(hwnd, id, code, hCtl);
+        ui_word_edit_on_command(hwnd, id, code, hCtl);
         return 0;
     }
 
@@ -73,7 +73,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
 
-    return DefWindowProcW(hwnd, msg, wParam, lParam);
+    return DefWindowProcW(hwnd, msg, w_param, l_param);
 }
 
 
@@ -92,13 +92,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     RegisterClassW(&wc);
 
     // 수정 창 클래스
-    WNDCLASSW wcEdit = { 0 };
-    wcEdit.lpfnWndProc = EditWndProc;
-    wcEdit.hInstance = hInstance;
-    wcEdit.lpszClassName = L"EditWindowClass";
-    wcEdit.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    WNDCLASSW wc_edit = { 0 };
+    wc_edit.lpfnWndProc = EditWndProc;
+    wc_edit.hInstance = hInstance;
+    wc_edit.lpszClassName = L"EditWindowClass";
+    wc_edit.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 
-    if (!RegisterClassW(&wcEdit)) {
+    if (!RegisterClassW(&wc_edit)) {
         MessageBoxW(NULL, L"EditWindowClass 등록 실패", L"Error", MB_OK | MB_ICONERROR);
         return 0;
     }

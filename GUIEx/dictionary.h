@@ -17,7 +17,6 @@ extern "C" {
 		wchar_t example[256];
 	} Word;
 
-	void dict_shutdown(void);
 	int dict_add(const Word* w);
 	size_t dict_count(void);
 	int dict_save(void);

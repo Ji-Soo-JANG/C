@@ -5,59 +5,48 @@
 #pragma comment(lib, "Comctl32.lib")
 
 // ===== 전역 UI 핸들 =====
-HWND hDebugPanel;
-HFONT hFont;
+HWND debug_panel;
+HFONT font;
 
-HWND hBtnHome;
-HWND hBtnRegisterPage, hBtnSearchPage, hBtnQuizPage;
-HWND hBtnAddWords,hBtnEditWord, hBtnDelteWord, hBtnShowQuiz;
-HWND hEditKanji, hEditKana, hEditMeaning, hEditExample, hBtnRegister;
-HWND hBtnSearch, hListViewList, hListViewWord;
-HWND hWndEditKanji, hWndEditKana, hWndEditMeaning, hWndEditExample, hWndBtnAdd, hWndBtnSave, hWndBtnCancle, hWndListCombo;
-HWND hQuizQuestion, hQuizOptionBtn[4], hQuizResult, hQuizNextBtn;
+HWND btn_home;
+HWND btn_add_words, btn_edit_word, btn_delete_word, btn_show_quiz;
+HWND btn_search, lv_list, lv_word;
+HWND edit_kanji, edit_kana, edit_meaning, edit_example, btn_add, btn_save, btn_cancle, cmb_list;
+HWND quiz_question, quiz_option_btn[4], quiz_result, quiz_next_btn;
 
-static HWND mainHWNDs[3];
-static struct registerCtrs regStructs[4];
-static HWND regHWNDs[5];
-static HWND searchHWNDs[6];
-static HWND editHWNDs[8];
-static HWND quizHWNDs[7];
-static wchar_t g_currentListName[MAX_PATH] = L"";
-static int correctPos, chosenPos;
-static int optionIdxs[4];
+static HWND search_hwnds[6];
+static HWND edit_hwnds[8];
+static HWND quiz_hwnds[7];
+static wchar_t g_current_list_name[MAX_PATH] = L"";
+static int correct_pos, chosen_pos;
+static int option_idxs[4];
 static int quiz_current = 0;
 
 
-#define countMainCtrs   (sizeof(mainHWNDs)  / sizeof(mainHWNDs[0]))
-#define countRegEdits   (sizeof(regStructs) / sizeof(regStructs[0]))
-#define countRegCtrs    (sizeof(regHWNDs)   / sizeof(regHWNDs[0]))
-#define countSearchCtrs (sizeof(searchHWNDs)/ sizeof(searchHWNDs[0]))
-#define countEditCtrs (sizeof(editHWNDs)/ sizeof(editHWNDs[0]))
-#define countQuizCtrs (sizeof(quizHWNDs)/ sizeof(quizHWNDs[0]))
+#define COUNT_SEARCH_CTRS (sizeof(search_hwnds)/ sizeof(search_hwnds[0]))
+#define COUNT_EDIT_CTRS (sizeof(edit_hwnds)/ sizeof(edit_hwnds[0]))
+#define COUNT_QUIZ_CTRS (sizeof(quiz_hwnds)/ sizeof(quiz_hwnds[0]))
 
 static HINSTANCE g_hInst = NULL;
 
 // ===== 내부 헬퍼 함수 선언 =====
-static BOOL readText(HWND h, wchar_t* out, int cap);
-static void setPlaceholder(struct registerCtrs* com);
-static void toggleWindow(HWND arr[], int count, BOOL show);
+static BOOL read_text(HWND h, wchar_t* out, int cap);
+static void toggle_window(HWND arr[], int count, BOOL show);
 static void on_button_click(HWND hwnd, int id, HWND ctr);
-static void on_edit_setfocus(HWND hwndCtl);
-static void on_edit_killfocus(HWND hwndCtl);
 static void show_lists(wchar_t* lists);
 static void show_words(void);
 static void hide_words(void);
 static void add_word(wchar_t* list);
-static BOOL listview_contains(HWND hList, const wchar_t* text);
+static BOOL listview_contains(HWND list, const wchar_t* text);
 
 // ====== 공용 엔트리 포인트 ======
 
-void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
+void ui_on_create(HWND hwnd, LPCREATESTRUCT pcs)
 {
     g_hInst = pcs->hInstance;
 
     // 폰트 생성
-    hFont = CreateFontW(
+    font = CreateFontW(
         18, 0, 0, 0,
         FW_NORMAL, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
@@ -65,163 +54,102 @@ void UI_OnCreate(HWND hwnd, LPCREATESTRUCT pcs)
         VARIABLE_PITCH, L"MS UI Gothic"
     );
 
-    // 디버그 패널
- /*   hDebugPanel = CreateWindowW(
-        L"STATIC", L"디버그 패널 초기화됨",
-        WS_CHILD | WS_VISIBLE | SS_LEFT,
-        10, 10, 500, 20,
-        hwnd, NULL, pcs->hInstance, NULL
-    );*/
-
     // 홈 버튼
-    hBtnHome = CreateWindowW(
+    btn_home = CreateWindowW(
         L"Button", L"ホームへ",
         WS_CHILD | WS_VISIBLE | WS_BORDER,
         30, 500, 100, 50,
         hwnd, (HMENU)1001, pcs->hInstance, NULL
     );
-    SendMessageW(hBtnHome, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-    // 메인 기능 버튼
-    hBtnRegisterPage = CreateWindowW(L"Button", L"登録", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        260, 100, 100, 200, hwnd, (HMENU)1002, pcs->hInstance, NULL);
-    hBtnSearchPage = CreateWindowW(L"Button", L"照会", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        360, 100, 100, 200, hwnd, (HMENU)1003, pcs->hInstance, NULL);
-    hBtnQuizPage = CreateWindowW(L"Button", L"クイズ", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        460, 100, 100, 200, hwnd, (HMENU)1004, pcs->hInstance, NULL);
-
-    SendMessageW(hBtnRegisterPage, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnSearchPage, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnQuizPage, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-    mainHWNDs[0] = hBtnRegisterPage;
-    mainHWNDs[1] = hBtnSearchPage;
-    mainHWNDs[2] = hBtnQuizPage;
-    toggleWindow(mainHWNDs, countMainCtrs, TRUE);
-
-    // 등록 화면 컨트롤
-    hEditKanji = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        50, 50, 200, 50, hwnd, (HMENU)2001, pcs->hInstance, NULL);
-    hEditKana = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        50, 100, 200, 50, hwnd, (HMENU)2002, pcs->hInstance, NULL);
-    hEditMeaning = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        50, 150, 200, 50, hwnd, (HMENU)2003, pcs->hInstance, NULL);
-    hEditExample = CreateWindowW(L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_LEFT | ES_AUTOHSCROLL,
-        50, 200, 200, 50, hwnd, (HMENU)2004, pcs->hInstance, NULL);
-    hBtnRegister = CreateWindowW(L"Button", L"単語登録", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        50, 250, 200, 50, hwnd, (HMENU)2005, pcs->hInstance, NULL);
-
-    struct registerCtrs cKanji = { hEditKanji,   L"漢字" };
-    struct registerCtrs cKana = { hEditKana,    L"カナ" };
-    struct registerCtrs cMeaning = { hEditMeaning, L"意味" };
-    struct registerCtrs cExample = { hEditExample, L"例文" };
-
-    regStructs[0] = cKanji;
-    regStructs[1] = cKana;
-    regStructs[2] = cMeaning;
-    regStructs[3] = cExample;
-
-    SendMessageW(hEditKanji, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hEditKana, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hEditMeaning, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hEditExample, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnRegister, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-    for (int i = 0; i < countRegEdits; i++) {
-        setPlaceholder(&regStructs[i]);
-    }
-
-    regHWNDs[0] = hEditKanji;
-    regHWNDs[1] = hEditKana;
-    regHWNDs[2] = hEditMeaning;
-    regHWNDs[3] = hEditExample;
-    regHWNDs[4] = hBtnRegister;
-    toggleWindow(regHWNDs, countRegCtrs, FALSE);
+    SendMessageW(btn_home, WM_SETFONT, (WPARAM)font, TRUE);
 
     // 조회 화면 컨트롤
-    hListViewList = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
+    lv_list = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
         WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_EDITLABELS,
         30, 50, 100, 450, hwnd, (HMENU)3001, pcs->hInstance, NULL);
 
-    LVCOLUMNW colType = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
-    colType.cx = 100;
-    colType.pszText = L"リスト";
-    ListView_InsertColumn(hListViewList, 0, &colType);
+    LVCOLUMNW col_type = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
+    col_type.cx = 100;
+    col_type.pszText = L"リスト";
+    ListView_InsertColumn(lv_list, 0, &col_type);
 
-    hListViewWord = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
+    lv_word = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, NULL,
         WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHOWSELALWAYS,
         130, 50, 600, 450, hwnd, (HMENU)3002, pcs->hInstance, NULL);
 
-    LVCOLUMNW colWord = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
-    colWord.cx = 150; colWord.pszText = L"漢字";  ListView_InsertColumn(hListViewWord, 0, &colWord);
-    colWord.cx = 150; colWord.pszText = L"カナ";  ListView_InsertColumn(hListViewWord, 1, &colWord);
-    colWord.cx = 150; colWord.pszText = L"意味";  ListView_InsertColumn(hListViewWord, 2, &colWord);
-    colWord.cx = 150; colWord.pszText = L"例文";  ListView_InsertColumn(hListViewWord, 3, &colWord);
+    LVCOLUMNW col_word = { LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM };
+    col_word.cx = 150; col_word.pszText = L"漢字";  ListView_InsertColumn(lv_word, 0, &col_word);
+    col_word.cx = 150; col_word.pszText = L"カナ";  ListView_InsertColumn(lv_word, 1, &col_word);
+    col_word.cx = 150; col_word.pszText = L"意味";  ListView_InsertColumn(lv_word, 2, &col_word);
+    col_word.cx = 150; col_word.pszText = L"例文";  ListView_InsertColumn(lv_word, 3, &col_word);
 
-    DWORD exStyle = ListView_GetExtendedListViewStyle(hListViewWord);
-    exStyle |= LVS_EX_FULLROWSELECT;          
-    ListView_SetExtendedListViewStyle(hListViewWord, exStyle);
+    DWORD ex_style = ListView_GetExtendedListViewStyle(lv_word);
+    ex_style |= LVS_EX_FULLROWSELECT;          
+    ListView_SetExtendedListViewStyle(lv_word, ex_style);
 
-    hBtnAddWords = CreateWindowW(L"Button", L"追加", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        330, 500, 100, 50, hwnd, (HMENU)3003, pcs->hInstance, NULL);
-    hBtnEditWord = CreateWindowW(L"Button", L"修正", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        430, 500, 100, 50, hwnd, (HMENU)3004, pcs->hInstance, NULL);
-    hBtnDelteWord = CreateWindowW(L"Button", L"削除", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        530, 500, 100, 50, hwnd, (HMENU)3005, pcs->hInstance, NULL);
-    hBtnShowQuiz = CreateWindowW(L"Button", L"クイズ", WS_CHILD | WS_VISIBLE | WS_BORDER,
-        630, 500, 100, 50, hwnd, (HMENU)3006, pcs->hInstance, NULL);
+    btn_add_words = CreateWindowW(L"Button", L"追加", WS_CHILD | WS_VISIBLE | WS_BORDER,
+        330, 500, 100, 50, hwnd, (HMENU)1002, pcs->hInstance, NULL);
+    btn_edit_word = CreateWindowW(L"Button", L"修正", WS_CHILD | WS_VISIBLE | WS_BORDER,
+        430, 500, 100, 50, hwnd, (HMENU)1003, pcs->hInstance, NULL);
+    btn_delete_word = CreateWindowW(L"Button", L"削除", WS_CHILD | WS_VISIBLE | WS_BORDER,
+        530, 500, 100, 50, hwnd, (HMENU)1004, pcs->hInstance, NULL);
+    btn_show_quiz = CreateWindowW(L"Button", L"クイズ", WS_CHILD | WS_VISIBLE | WS_BORDER,
+        630, 500, 100, 50, hwnd, (HMENU)1005, pcs->hInstance, NULL);
 
-    SendMessageW(hBtnAddWords, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnEditWord, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnDelteWord, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hBtnShowQuiz, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(btn_add_words, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_edit_word, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_delete_word, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_show_quiz, WM_SETFONT, (WPARAM)font, TRUE);
     
-    searchHWNDs[0] = hListViewList;
-    searchHWNDs[1] = hListViewWord;
-    searchHWNDs[2] = hBtnAddWords;
-    searchHWNDs[3] = hBtnEditWord;
-    searchHWNDs[4] = hBtnDelteWord;
-    searchHWNDs[5] = hBtnShowQuiz;
+    search_hwnds[0] = lv_list;
+    search_hwnds[1] = lv_word;
+    search_hwnds[2] = btn_add_words;
+    search_hwnds[3] = btn_edit_word;
+    search_hwnds[4] = btn_delete_word;
+    search_hwnds[5] = btn_show_quiz;
 
-    toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
+    toggle_window(search_hwnds, COUNT_SEARCH_CTRS, TRUE);
+    wchar_t* lists = get_all_lists();
+    show_lists(lists);
+
 }
 
-void UI_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl)
+void ui_on_command(HWND hwnd, int id, int code, HWND hwnd_ctl)
 {
     if (code == BN_CLICKED) {
-        on_button_click(hwnd, id, hwndCtl);
+        on_button_click(hwnd, id, hwnd_ctl);
     }
     else if (code == EN_SETFOCUS) {
-        on_edit_setfocus(hwndCtl);
+        //on_edit_setfocus(hwndCtl);
     }
     else if (code == EN_KILLFOCUS) {
-        on_edit_killfocus(hwndCtl);
+        //on_edit_killfocus(hwndCtl);
     }
 }
 
-BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
+BOOL ui_on_notify(HWND hwnd, WPARAM w_param, LPARAM l_param, LRESULT* result)
 {
-    LPNMHDR pNMHDR = (LPNMHDR)lParam;
+    LPNMHDR nmhdr = (LPNMHDR)l_param;
 
     // 리스트 이름 리스트뷰에서 온 통지인지
-    if (pNMHDR->hwndFrom == hListViewList) {
-        NMLISTVIEW* pNMLV = (NMLISTVIEW*)lParam;
-        int index = pNMLV->iItem;
-        int count = ListView_GetItemCount(hListViewList);
-        int plusIdx = count - 1;
+    if (nmhdr->hwndFrom == lv_list) {
+        NMLISTVIEW* nmlv = (NMLISTVIEW*)l_param;
+        int index = nmlv->iItem;
+        int count = ListView_GetItemCount(lv_list);
+        int plus_idx = count - 1;
 
-        if (pNMHDR->code == LVN_ITEMCHANGED) { 
-            if ((pNMLV->uChanged & LVIF_STATE) &&
-                (pNMLV->uNewState & LVIS_SELECTED)) {
+        if (nmhdr->code == LVN_ITEMCHANGED) { 
+            if ((nmlv->uChanged & LVIF_STATE) &&
+                (nmlv->uNewState & LVIS_SELECTED)) {
 
-                if (index >= 0 && index != plusIdx) {
+                if (index >= 0 && index != plus_idx) {
                     wchar_t buf[256];
-                    ListView_GetItemText(hListViewList, index, 0, buf, 256);
-                    wcsncpy_s(g_currentListName, _countof(g_currentListName), buf, _TRUNCATE);
+                    ListView_GetItemText(lv_list, index, 0, buf, 256);
+                    wcsncpy_s(g_current_list_name, _countof(g_current_list_name), buf, _TRUNCATE);
                     /*wchar_t deb[256];
                     wsprintfW(deb, L"list : %ls\n", g_currentListName);
                     OutputDebugStringW(deb);*/
-                    set_dict(g_currentListName);
+                    set_dict(g_current_list_name);
                     show_words();
                 }
             }
@@ -230,17 +158,16 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
 
         }
 
-        if (pNMHDR->code == LVN_ITEMACTIVATE) {
-            if (index == plusIdx) {
-                ListView_EditLabel(hListViewList, index);
+        if (nmhdr->code == LVN_ITEMACTIVATE) {
+            if (index == plus_idx) {
+                ListView_EditLabel(lv_list, index);
             }
             *result = 0;
             return TRUE;
         }
 
-        if (pNMHDR->code == LVN_ENDLABELEDIT) {
-            NMLVDISPINFOW* info = (NMLVDISPINFOW*)lParam;
-            HWND hList = hListViewList;
+        if (nmhdr->code == LVN_ENDLABELEDIT) {
+            NMLVDISPINFOW* info = (NMLVDISPINFOW*)l_param;
             const wchar_t* name = info->item.pszText;
 
             if (info->item.pszText == NULL || info->item.pszText[0] == L'\0') {
@@ -250,14 +177,14 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
 
             new_dict(name);
 
-            wcsncpy_s(g_currentListName, _countof(g_currentListName), name, _TRUNCATE);
-            set_dict(g_currentListName);
+            ListView_DeleteAllItems(lv_list);
             wchar_t* lists = get_all_lists();
             show_lists(lists);
 
             //OutputDebugStringW(name);
 
-
+            *result = FALSE;
+            return TRUE;
         }
 
     }
@@ -265,40 +192,27 @@ BOOL UI_OnNotify(HWND hwnd, WPARAM wParam, LPARAM lParam, LRESULT* result)
     return FALSE;
 }
 
-void UI_OnDestroy(void)
+void ui_on_destroy(void)
 {
     dict_save();
-    dict_shutdown();
 
-    if (hFont) {
-        DeleteObject(hFont);
-        hFont = NULL;
+    if (font) {
+        DeleteObject(font);
+        font = NULL;
     }
 }
 
 // ===== 내부 헬퍼 구현부 =====
 
-static BOOL readText(HWND h, wchar_t* out, int cap)
+static BOOL read_text(HWND h, wchar_t* out, int cap)
 {
     wchar_t tmp[512];
     GetWindowTextW(h, tmp, _countof(tmp));
-    if (wcsstr(tmp, L"を入力してください")) {
-        out[0] = L'\0';
-        return TRUE;
-    }
     wcsncpy_s(out, cap, tmp, _TRUNCATE);
     return TRUE;
 }
 
-static void setPlaceholder(struct registerCtrs* com)
-{
-    const wchar_t* suffix = L"を入力してください";
-    wchar_t buf[128];
-    wsprintfW(buf, L"%s%s", com->name, suffix);
-    SetWindowTextW(com->hwnd, buf);
-}
-
-static void toggleWindow(HWND arr[], int count, BOOL show)
+static void toggle_window(HWND arr[], int count, BOOL show)
 {
     wchar_t dbg[64];
     for (int i = 0; i < count; i++) {
@@ -308,83 +222,26 @@ static void toggleWindow(HWND arr[], int count, BOOL show)
     }
 }
 
-static void on_button_click(HWND hwnd, int id, HWND ctr)
-{
+static void on_button_click(HWND hwnd, int id, HWND ctr){
     wchar_t log[128];
-    wchar_t btnName[128];
-    GetWindowTextW(ctr, btnName, _countof(btnName));
-    wsprintfW(log, L"%s가 눌렸습니다.\n", btnName);
+    wchar_t btn_name[128];
+    GetWindowTextW(ctr, btn_name, _countof(btn_name));
+    wsprintfW(log, L"%s가 눌렸습니다.\n", btn_name);
     OutputDebugStringW(log);
 
     switch (id) {
     case 1001: // 홈
         hide_words();
-        toggleWindow(mainHWNDs, countMainCtrs, TRUE);
-        toggleWindow(regHWNDs, countRegCtrs, FALSE);
-        toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
-        toggleWindow(quizHWNDs, countQuizCtrs, FALSE);
+        toggle_window(search_hwnds, COUNT_SEARCH_CTRS, TRUE);
+        toggle_window(quiz_hwnds, COUNT_QUIZ_CTRS, FALSE);
         SetFocus(hwnd);
 
         break;
+    
+    case 1002: { // 추가 버튼
+        int word_idx = -1;
 
-    case 1002: // 등록
-        toggleWindow(mainHWNDs, countMainCtrs, FALSE);
-        InvalidateRect(hwnd, NULL, TRUE);
-        UpdateWindow(hwnd);
-
-        toggleWindow(regHWNDs, countRegCtrs, TRUE);
-        for (int i = 0; i < countRegEdits; i++) {
-            setPlaceholder(&regStructs[i]);
-        }
-        
-        SetFocus(hEditKanji);
-        break;
-
-    case 1003: { // 조회
-        toggleWindow(mainHWNDs, countMainCtrs, FALSE);
-        InvalidateRect(hwnd, NULL, TRUE);
-        UpdateWindow(hwnd);
-        toggleWindow(searchHWNDs, countSearchCtrs, TRUE);
-
-        wchar_t* lists = get_all_lists(); 
-        show_lists(lists);
-        break;
-    }
-
-    case 1004: // 퀴즈(아직 미구현)
-        toggleWindow(mainHWNDs, countMainCtrs, FALSE);
-        InvalidateRect(hwnd, NULL, TRUE);
-        UpdateWindow(hwnd);
-        toggleWindow(searchHWNDs, 1, FALSE);
-
-        quiz_current = 0;
-        if (dict_count() < 4) {
-            MessageBoxW(hwnd, L"少なくても４つ以上の単語を登録してください。", L"最小単語不足", MB_OK);
-            hide_words();
-            toggleWindow(mainHWNDs, countMainCtrs, TRUE);
-            toggleWindow(regHWNDs, countRegCtrs, FALSE);
-            toggleWindow(searchHWNDs, countSearchCtrs, FALSE);
-            toggleWindow(quizHWNDs, countQuizCtrs, FALSE);
-            SetFocus(hwnd);
-
-            break;
-        }
-
-        create_quiz_page(hwnd, g_hInst);
-        toggleWindow(quizHWNDs, countQuizCtrs, TRUE);
-        dict_mix();
-        quiz_show(quiz_current);
-
-        break;
-
-    case 2005: // 단어 등록 버튼
-        //add_word(hwnd);
-        break;
-
-    case 3003: { // 추가 버튼
-        int wordIdx = -1;
-
-        HWND hEditWnd = CreateWindowExW(
+        HWND edit_wnd = CreateWindowExW(
             WS_EX_CONTROLPARENT,
             L"EditWindowClass",
             L"追加",
@@ -393,33 +250,29 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
             hwnd,
             NULL,
             g_hInst,
-            (LPVOID)wordIdx
+            (LPVOID)word_idx
         );
 
-        if (hEditWnd) {
-            ShowWindow(hEditWnd, SW_SHOW);
-            UpdateWindow(hEditWnd);
+        if (edit_wnd) {
+            ShowWindow(edit_wnd, SW_SHOW);
+            UpdateWindow(edit_wnd);
         }
-
-
-
         break;
     }
-    
 
-    case 3004:{// 수정 버튼
+    case 1003:{// 수정 버튼
         /*
         1. 선택된 listView 받아오기(index)
         2. 새로운 창 생성 - hwnd(Edit - 한자/카나/뜻/예문, Button - 수정/취소)
         3. g_words에서 해당 index의 값 변경
         */
 
-        int wordIdx = ListView_GetNextItem(hListViewWord, -1, LVNI_SELECTED);
-        if (wordIdx == -1) {
+        int word_idx = ListView_GetNextItem(lv_word, -1, LVNI_SELECTED);
+        if (word_idx == -1) {
             break;
         }
 
-        HWND hEditWnd = CreateWindowExW(
+        HWND edit_wnd = CreateWindowExW(
             WS_EX_CONTROLPARENT,
             L"EditWindowClass",
             L"修正",
@@ -428,17 +281,18 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
             hwnd,
             NULL,
             g_hInst,
-            (LPVOID)wordIdx
+            (LPVOID)word_idx
         );
 
-        if (hEditWnd) {
-            ShowWindow(hEditWnd, SW_SHOW);
-            UpdateWindow(hEditWnd);
+        if (edit_wnd) {
+            ShowWindow(edit_wnd, SW_SHOW);
+            UpdateWindow(edit_wnd);
         }
 
         break;
     } 
-    case 3005: { // 삭제 버튼
+
+    case 1004: { // 삭제 버튼
         /*
         1. 선택된 listView 받아오기(index)
         2. listView의 단어를 g_words에서 지우기
@@ -446,107 +300,102 @@ static void on_button_click(HWND hwnd, int id, HWND ctr)
         4. g_count 다시 세기
         */
 
-        int wordIdx = ListView_GetNextItem(hListViewWord, -1, LVNI_SELECTED);
-        if (wordIdx == -1) {
+        int word_idx = ListView_GetNextItem(lv_word, -1, LVNI_SELECTED);
+        if (word_idx == -1) {
             break;
         }
 
         int result = MessageBox(hwnd, L"削除しますか", L"削除確認", MB_OKCANCEL);
         if (result == IDOK) {
-            dict_delete(wordIdx);
+            dict_delete(word_idx);
             show_words();
         }
         
         break;
     }
-    case 4100:
-        chosenPos = optionIdxs[0];
-        is_correct();
-        break;
 
-    case 4101:
-        chosenPos = optionIdxs[1];
-        is_correct();
-        break;
+    case 1005: { // 퀴즈
+        InvalidateRect(hwnd, NULL, TRUE);
+        UpdateWindow(hwnd);
+        toggle_window(search_hwnds, COUNT_SEARCH_CTRS, FALSE);
 
-    case 4102:
-        chosenPos = optionIdxs[2];
-        is_correct();
-        break;
+        quiz_current = 0;
+        if (dict_count() < 4) {
+            MessageBoxW(hwnd, L"少なくても４つ以上の単語を登録してください。", L"最小単語不足", MB_OK);
+            hide_words();
+            toggle_window(search_hwnds, COUNT_SEARCH_CTRS, TRUE);
+            toggle_window(quiz_hwnds, COUNT_QUIZ_CTRS, FALSE);
+            SetFocus(hwnd);
 
-    case 4103:
-        chosenPos = optionIdxs[3];
-        is_correct();
-        break;
-
-    case 4200:
-        quiz_show(++quiz_current);
-        SetWindowTextW(hQuizResult, L"");
-        break;
-}
+            break;
+        }
     
+        create_quiz_page(hwnd, g_hInst);
+        toggle_window(quiz_hwnds, COUNT_QUIZ_CTRS, TRUE);
+        dict_mix();
+        quiz_show(quiz_current);
 
+        break;
+    }
 
-}
+    case 5100: {
+        chosen_pos = option_idxs[0];
+        is_correct();
+        break;
+    }
 
-static void on_edit_setfocus(HWND hwndCtl)
-{
-    for (int i = 0; i < countRegEdits; i++) {
-        if (hwndCtl == regStructs[i].hwnd) {
-            wchar_t buf[128];
-            GetWindowTextW(hwndCtl, buf, _countof(buf));
+    case 5101: {
+        chosen_pos = option_idxs[1];
+        is_correct();
+        break;
+    }
 
-            wchar_t expected[128];
-            wsprintfW(expected, L"%sを入力してください", regStructs[i].name);
+    case 5102: {
+        chosen_pos = option_idxs[2];
+        is_correct();
+        break;
+    }
 
-            if (wcscmp(buf, expected) == 0) {
-                SetWindowTextW(hwndCtl, L"");
-            }
-        }
+    case 5103: {
+        chosen_pos = option_idxs[3];
+        is_correct();
+        break;
+    }
+
+    case 5200: {
+        quiz_show(++quiz_current);
+        SetWindowTextW(quiz_result, L"");
+        break;
+    }
+
     }
 }
 
-static void on_edit_killfocus(HWND hwndCtl)
-{
-    for (int i = 0; i < countRegEdits; i++) {
-        if (hwndCtl == regStructs[i].hwnd) {
-            wchar_t buf[128];
-            GetWindowTextW(hwndCtl, buf, _countof(buf));
-
-            if (buf[0] == L'\0') {
-                setPlaceholder(&regStructs[i]);
-            }
-        }
-    }
-}
-
-static void show_lists(wchar_t* lists)
-{
-    if (!lists) return;
-    ListView_DeleteAllItems(hListViewList);
+static void show_lists(wchar_t* lists){
+    ListView_DeleteAllItems(lv_list);
 
     wchar_t* context = NULL;
     wchar_t* line = wcstok_s(lists, L"\n", &context);
 
     while (line != NULL) {
-        if (!listview_contains(hListViewList, line)) {
+        if (!listview_contains(lv_list, line)) {
             LVITEMW item = { 0 };
             item.mask = LVIF_TEXT;
-            item.iItem = ListView_GetItemCount(hListViewList);
+            item.iItem = ListView_GetItemCount(lv_list);
             item.iSubItem = 0;
             item.pszText = line;
 
-            ListView_InsertItem(hListViewList, &item);
+            ListView_InsertItem(lv_list, &item);
         }
         line = wcstok_s(NULL, L"\n", &context);
     }
 
     free(lists); 
 
-    int count = ListView_GetItemCount(hListViewList);
+    int count = ListView_GetItemCount(lv_list);
     if (count > 0) {
         wchar_t buf[256];
-        ListView_GetItemText(hListViewList, count - 1, 0, buf, 256);
+        ListView_GetItemText(lv_list, count - 1, 0, buf, 256);
 
         if (wcscmp(buf, L"+ 新しいリスト") == 0) {
             return;
@@ -555,10 +404,10 @@ static void show_lists(wchar_t* lists)
 
     LVITEMW item = { 0 };
     item.mask = LVIF_TEXT;
-    item.iItem = ListView_GetItemCount(hListViewList);
+    item.iItem = ListView_GetItemCount(lv_list);
     item.iSubItem = 0;
     item.pszText = L"+ 新しいリスト";
-    ListView_InsertItem(hListViewList, &item);
+    ListView_InsertItem(lv_list, &item);
 }
 
 static void show_words(void)
@@ -566,7 +415,7 @@ static void show_words(void)
     const Word* words = dict_get_all();
     size_t count = dict_count();
 
-    ListView_DeleteAllItems(hListViewWord);
+    ListView_DeleteAllItems(lv_word);
 
     for (int i = 0; i < (int)count; i++) {
 
@@ -576,20 +425,20 @@ static void show_words(void)
         item.iSubItem = 0;
         item.pszText = words[i].kanji;
 
-        ListView_InsertItem(hListViewWord, &item);
+        ListView_InsertItem(lv_word, &item);
 
-        ListView_SetItemText(hListViewWord, i, 1, words[i].kana);
-        ListView_SetItemText(hListViewWord, i, 2, words[i].meaning);
-        ListView_SetItemText(hListViewWord, i, 3, words[i].example);
+        ListView_SetItemText(lv_word, i, 1, words[i].kana);
+        ListView_SetItemText(lv_word, i, 2, words[i].meaning);
+        ListView_SetItemText(lv_word, i, 3, words[i].example);
     }
 }
 
 static void hide_words(void) {
-    if (IsWindowVisible(hListViewList)) {
-        ListView_SetItemState(hListViewList, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+    if (IsWindowVisible(lv_list)) {
+        ListView_SetItemState(lv_list, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
     }
-    if (hListViewWord) {
-        ListView_DeleteAllItems(hListViewWord);
+    if (lv_word) {
+        ListView_DeleteAllItems(lv_word);
     }
 }
 
@@ -599,10 +448,10 @@ static void add_word(wchar_t* list)
     set_dict(list);
 
     Word new_words = { 0 };
-    readText(hWndEditKanji, new_words.kanji, _countof(new_words.kanji));
-    readText(hWndEditKana, new_words.kana, _countof(new_words.kana));
-    readText(hWndEditMeaning, new_words.meaning, _countof(new_words.meaning));
-    readText(hWndEditExample, new_words.example, _countof(new_words.example));
+    read_text(edit_kanji, new_words.kanji, _countof(new_words.kanji));
+    read_text(edit_kana, new_words.kana, _countof(new_words.kana));
+    read_text(edit_meaning, new_words.meaning, _countof(new_words.meaning));
+    read_text(edit_example, new_words.example, _countof(new_words.example));
     new_words.type = 0;
     new_words.proficiency = 0;
 
@@ -613,13 +462,13 @@ static void add_word(wchar_t* list)
     }
 }
 
-static BOOL listview_contains(HWND hList, const wchar_t* text)
+static BOOL listview_contains(HWND list, const wchar_t* text)
 {
-    int count = ListView_GetItemCount(hList);
+    int count = ListView_GetItemCount(list);
 
     wchar_t buf[256];
     for (int i = 0; i < count; i++) {
-        ListView_GetItemText(hList, i, 0, buf, 256);
+        ListView_GetItemText(list, i, 0, buf, 256);
         if (wcscmp(buf, text) == 0) {
             return TRUE;
         }
@@ -628,38 +477,38 @@ static BOOL listview_contains(HWND hList, const wchar_t* text)
 }
 
 // 수정창 부
-void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
-    int wordIdx = (int)(INT_PTR)pcs->lpCreateParams;
+void ui_word_on_create(HWND hwnd, LPCREATESTRUCT pcs) {
+    int word_idx = (int)(INT_PTR)pcs->lpCreateParams;
 
-    SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)wordIdx);
+    SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)word_idx);
 
-    BOOL isAddMode = (wordIdx < 0);
-    BOOL isReviseMode = (wordIdx >= 0);
+    BOOL is_add_mode = (word_idx < 0);
+    BOOL is_revise_mode = (word_idx >= 0);
 
     // 베이스 레이아웃 설정
-    const int dlgWidth = 420;
-    const int marginX = 20;
-    const int marginY = 20;
-    const int labelWidth = 60;
-    const int editWidth = 260;
+    const int dlg_width = 420;
+    const int margin_x = 20;
+    const int margin_y = 20;
+    const int label_width = 60;
+    const int edit_width = 260;
     const int height = 28;
-    const int gapY = 34;
+    const int gap_y = 34;
 
-    int xLabel = marginX;
-    int xEdit = marginX + labelWidth + 10;
-    int y = marginY;
+    int x_label = margin_x;
+    int x_edit = margin_x + label_width + 10;
+    int y = margin_y;
 
     CreateWindowW(
         L"STATIC", L"リスト:",
         WS_CHILD | WS_VISIBLE | SS_RIGHT,
-        xLabel, y + 6, labelWidth, height,
+        x_label, y + 6, label_width, height,
         hwnd, NULL, pcs->hInstance, NULL
     );
 
-    hWndListCombo = CreateWindowW(
+    cmb_list = CreateWindowW(
         L"COMBOBOX", NULL,
         WS_CHILD | WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWNLIST,
-        xEdit, y, editWidth, 200,
+        x_edit, y, edit_width, 200,
         hwnd, (HMENU)3010, pcs->hInstance, NULL
     );
 
@@ -671,187 +520,188 @@ void UI_Word_OnCreate(HWND hwnd, LPCREATESTRUCT pcs) {
 
         while (line) {
             if (line[0] != L'\0') {
-                SendMessageW(hWndListCombo, CB_ADDSTRING, 0, (LPARAM)line);
+                SendMessageW(cmb_list, CB_ADDSTRING, 0, (LPARAM)line);
             }
             line = wcstok_s(NULL, L"\n", &context);
         }
         free(lists);
     }
-    SendMessageW(hWndListCombo, CB_SETCURSEL, 0, 0);
+    SendMessageW(cmb_list, CB_SETCURSEL, 0, 0);
 
 
 
-    y += gapY + 10;
+    y += gap_y + 10;
 
     // 漢字
     CreateWindowW(
         L"STATIC", L"漢字:",
         WS_CHILD | WS_VISIBLE | SS_RIGHT,
-        xLabel, y + 6, labelWidth, height,
+        x_label, y + 6, label_width, height,
         hwnd, NULL, pcs->hInstance, NULL
     );
-    hWndEditKanji = CreateWindowW(
+    edit_kanji = CreateWindowW(
         L"Edit", NULL,
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP ,
-        xEdit, y, editWidth, height,
+        x_edit, y, edit_width, height,
         hwnd, (HMENU)3011, pcs->hInstance, NULL
     );
 
-    y += gapY;
+    y += gap_y;
 
     // カナ
     CreateWindowW(
         L"STATIC", L"カナ:",
         WS_CHILD | WS_VISIBLE | SS_RIGHT,
-        xLabel, y + 6, labelWidth, height,
+        x_label, y + 6, label_width, height,
         hwnd, NULL, pcs->hInstance, NULL
     );
-    hWndEditKana = CreateWindowW(
+    edit_kana = CreateWindowW(
         L"Edit", NULL,
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP ,
-        xEdit, y, editWidth, height,
+        x_edit, y, edit_width, height,
         hwnd, (HMENU)3012, pcs->hInstance, NULL
     );
 
-    y += gapY;
+    y += gap_y;
 
     // 意味
     CreateWindowW(
         L"STATIC", L"意味:",
         WS_CHILD | WS_VISIBLE | SS_RIGHT,
-        xLabel, y + 6, labelWidth, height,
+        x_label, y + 6, label_width, height,
         hwnd, NULL, pcs->hInstance, NULL
     );
-    hWndEditMeaning = CreateWindowW(
+    edit_meaning = CreateWindowW(
         L"Edit", NULL,
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP ,
-        xEdit, y, editWidth, height,
+        x_edit, y, edit_width, height,
         hwnd, (HMENU)3013, pcs->hInstance, NULL
     );
 
-    y += gapY;
+    y += gap_y;
 
     // 例文
     CreateWindowW(
         L"STATIC", L"例文:",
         WS_CHILD | WS_VISIBLE | SS_RIGHT,
-        xLabel, y + 6, labelWidth, height,
+        x_label, y + 6, label_width, height,
         hwnd, NULL, pcs->hInstance, NULL
     );
-    hWndEditExample = CreateWindowW(
+    edit_example = CreateWindowW(
         L"Edit", NULL,
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_LEFT | ES_AUTOHSCROLL,
-        xEdit, y, editWidth, height,
+        x_edit, y, edit_width, height,
         hwnd, (HMENU)3014, pcs->hInstance, NULL
     );
 
-    const int btnWidth = 90;
-    const int btnHeight = 30;
-    const int btnGapX = 20;
-    const int bottomMargin = 20;
+    const int btn_width = 90;
+    const int btn_height = 30;
+    const int btn_gap_x = 20;
+    const int bottom_margin = 20;
 
-    int btnY = y + gapY + 20;
+    int btnY = y + gap_y + 20;
     RECT rc;
     GetClientRect(hwnd, &rc);
-    int centerX = (rc.right - rc.left) / 2;
+    int center_x = (rc.right - rc.left) / 2;
 
     // 두 버튼이므로:  [Cancel] [Add/Save]
-    int btnXOk = centerX - (btnWidth + btnGapX / 2);
-    int btnXCancel = centerX + (btnGapX / 2);
+    int btn_ok_x = center_x - (btn_width + btn_gap_x / 2);
+    int btn_cancel_x = center_x + (btn_gap_x / 2);
 
-    hWndBtnAdd = CreateWindowW(
+    btn_add = CreateWindowW(
         L"Button", L"追加",
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        btnXOk, btnY, btnWidth, btnHeight,
+        btn_ok_x, btnY, btn_width, btn_height,
         hwnd, (HMENU)3015, pcs->hInstance, NULL
     );
-    hWndBtnSave = CreateWindowW(
+    btn_save = CreateWindowW(
         L"Button", L"保存",
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        btnXOk, btnY, btnWidth, btnHeight,
+        btn_ok_x, btnY, btn_width, btn_height,
         hwnd, (HMENU)3016, pcs->hInstance, NULL
     );
-    hWndBtnCancle = CreateWindowW(
+    btn_cancle = CreateWindowW(
         L"Button", L"キャンセル",
         WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-        btnXCancel, btnY, btnWidth, btnHeight,
+        btn_cancel_x, btnY, btn_width, btn_height,
         hwnd, (HMENU)3017, pcs->hInstance, NULL
     );
 
-    int idx = (int)SendMessageW(hWndListCombo, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)g_currentListName);
+    int idx = (int)SendMessageW(cmb_list, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)g_current_list_name);
     if (idx != CB_ERR) {
-        SendMessageW(hWndListCombo, CB_SETCURSEL, idx, 0);
+        SendMessageW(cmb_list, CB_SETCURSEL, idx, 0);
     }
 
-    if (isAddMode) {
-        ShowWindow(hWndBtnAdd, SW_SHOW);
-        ShowWindow(hWndBtnSave, SW_HIDE);
+    if (is_add_mode) {
+        ShowWindow(btn_add, SW_SHOW);
+        ShowWindow(btn_save, SW_HIDE);
 
-        SetWindowTextW(hWndEditKanji, L"");
-        SetWindowTextW(hWndEditKana, L"");
-        SetWindowTextW(hWndEditMeaning, L"");
-        SetWindowTextW(hWndEditExample, L"");
+        SetWindowTextW(edit_kanji, L"");
+        SetWindowTextW(edit_kana, L"");
+        SetWindowTextW(edit_meaning, L"");
+        SetWindowTextW(edit_example, L"");
     }
     else {
-        ShowWindow(hWndBtnAdd, SW_HIDE);
-        ShowWindow(hWndBtnSave, SW_SHOW);
+        ShowWindow(btn_add, SW_HIDE);
+        ShowWindow(btn_save, SW_SHOW);
 
         // g_currentListName 과 일치하는 항목을 콤보에서 찾기
 
-        EnableWindow(hWndListCombo, FALSE);
+        EnableWindow(cmb_list, FALSE);
 
 
-        const Word* w = dict_get(wordIdx);
-        SetWindowTextW(hWndEditKanji, w->kanji);
-        SetWindowTextW(hWndEditKana, w->kana);
-        SetWindowTextW(hWndEditMeaning, w->meaning);
-        SetWindowTextW(hWndEditExample, w->example);
+        const Word* w = dict_get(word_idx);
+        SetWindowTextW(edit_kanji, w->kanji);
+        SetWindowTextW(edit_kana, w->kana);
+        SetWindowTextW(edit_meaning, w->meaning);
+        SetWindowTextW(edit_example, w->example);
     }
 
-    SendMessageW(hWndEditKanji, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndEditKana, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndEditMeaning, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndEditExample, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndBtnAdd, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndBtnSave, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hWndBtnCancle, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(edit_kanji, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(edit_kana, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(edit_meaning, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(edit_example, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_add, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_save, WM_SETFONT, (WPARAM)font, TRUE);
+    SendMessageW(btn_cancle, WM_SETFONT, (WPARAM)font, TRUE);
 
-    editHWNDs[0] = hWndEditKanji;
-    editHWNDs[1] = hWndEditKana;
-    editHWNDs[2] = hWndEditMeaning;
-    editHWNDs[3] = hWndEditExample;
-    editHWNDs[4] = hWndBtnAdd;
-    editHWNDs[5] = hWndBtnSave;
-    editHWNDs[6] = hWndBtnCancle;
+    edit_hwnds[0] = edit_kanji;
+    edit_hwnds[1] = edit_kana;
+    edit_hwnds[2] = edit_meaning;
+    edit_hwnds[3] = edit_example;
+    edit_hwnds[4] = btn_add;
+    edit_hwnds[5] = btn_save;
+    edit_hwnds[6] = btn_cancle;
 }
 
-void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl) {
-    int wordIdx = (int)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+void ui_word_edit_on_command(HWND hwnd, int id, int code, HWND hwndCtl) {
+    int word_idx = (int)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
     /*wchar_t buf[32];
     wsprintfW(buf, L"%d", wordIdx);*/
 
-    Word newWord = { 0 };
-    readText(hWndEditKanji, newWord.kanji, _countof(newWord.kanji));
-    readText(hWndEditKana, newWord.kana, _countof(newWord.kana));
-    readText(hWndEditMeaning, newWord.meaning, _countof(newWord.meaning));
-    readText(hWndEditExample, newWord.example, _countof(newWord.example));
-    newWord.type = 0;
-    newWord.proficiency = 0;
+    Word new_word = { 0 };
+    read_text(edit_kanji, new_word.kanji, _countof(new_word.kanji));
+    read_text(edit_kana, new_word.kana, _countof(new_word.kana));
+    read_text(edit_meaning, new_word.meaning, _countof(new_word.meaning));
+    read_text(edit_example, new_word.example, _countof(new_word.example));
+    new_word.type = 0;
+    new_word.proficiency = 0;
 
     switch (id) {
     case 3015: { // 추가
-        int idx = (int)SendMessageW(hWndListCombo, CB_GETCURSEL, 0, 0);
-        int len = (int)SendMessage(hWndListCombo, CB_GETLBTEXTLEN, idx, 0);
+        int idx = (int)SendMessageW(cmb_list, CB_GETCURSEL, 0, 0);
+        int len = (int)SendMessage(cmb_list, CB_GETLBTEXTLEN, idx, 0);
         wchar_t* list = malloc((len + 1) * sizeof(wchar_t));
-        SendMessage(hWndListCombo, CB_GETLBTEXT, idx, (LPARAM)list);
+        SendMessage(cmb_list, CB_GETLBTEXT, idx, (LPARAM)list);
 
         add_word(list);
         show_words();
+        free(list);
         DestroyWindow(hwnd);
         break;
     }
     case 3016: // 수정
-        if (dict_revise(wordIdx, &newWord) == 0) {
+        if (dict_revise(word_idx, &new_word) == 0) {
             dict_save();
             show_words();     
         }
@@ -868,8 +718,8 @@ void UI_WordEdit_OnCommand(HWND hwnd, int id, int code, HWND hwndCtl) {
 void create_quiz_page(HWND hwndParent, HINSTANCE hInst)
 {
     // 질문 영역
-    if (!hQuizQuestion) {
-        hQuizQuestion = CreateWindowExW(
+    if (!quiz_question) {
+        quiz_question = CreateWindowExW(
             0, L"STATIC",
             L"ここに問題が表示されます。",
             WS_CHILD | WS_VISIBLE | SS_CENTER,
@@ -881,33 +731,33 @@ void create_quiz_page(HWND hwndParent, HINSTANCE hInst)
         int y1 = 120, y2 = 180;
         int w = 250, h = 40;
 
-        hQuizOptionBtn[0] = CreateWindowExW(
+        quiz_option_btn[0] = CreateWindowExW(
             0, L"BUTTON", L"選択肢1",
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             x1, y1, w, h,
-            hwndParent, (HMENU)4100, hInst, NULL
+            hwndParent, (HMENU)5100, hInst, NULL
         );
-        hQuizOptionBtn[1] = CreateWindowExW(
+        quiz_option_btn[1] = CreateWindowExW(
             0, L"BUTTON", L"選択肢2",
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             x2, y1, w, h,
-            hwndParent, (HMENU)4101, hInst, NULL
+            hwndParent, (HMENU)5101, hInst, NULL
         );
-        hQuizOptionBtn[2] = CreateWindowExW(
+        quiz_option_btn[2] = CreateWindowExW(
             0, L"BUTTON", L"選択肢3",
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             x1, y2, w, h,
-            hwndParent, (HMENU)4102, hInst, NULL
+            hwndParent, (HMENU)5102, hInst, NULL
         );
-        hQuizOptionBtn[3] = CreateWindowExW(
+        quiz_option_btn[3] = CreateWindowExW(
             0, L"BUTTON", L"選択肢4",
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             x2, y2, w, h,
-            hwndParent, (HMENU)4103, hInst, NULL
+            hwndParent, (HMENU)5103, hInst, NULL
         );
 
         // 결과 표시
-        hQuizResult = CreateWindowExW(
+        quiz_result = CreateWindowExW(
             0, L"STATIC", L"",
             WS_CHILD | WS_VISIBLE | SS_CENTER,
             130, 240, 600, 30,
@@ -915,79 +765,79 @@ void create_quiz_page(HWND hwndParent, HINSTANCE hInst)
         );
 
         // 다음 문제 버튼
-        hQuizNextBtn = CreateWindowExW(
+        quiz_next_btn = CreateWindowExW(
             0, L"BUTTON", L"次の問題",
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             350, 280, 150, 35,
-            hwndParent, (HMENU)4200, hInst, NULL
+            hwndParent, (HMENU)5200, hInst, NULL
         );
 
-        quizHWNDs[0] = hQuizQuestion;
-        quizHWNDs[1] = hQuizOptionBtn[0];
-        quizHWNDs[2] = hQuizOptionBtn[1];
-        quizHWNDs[3] = hQuizOptionBtn[2];
-        quizHWNDs[4] = hQuizOptionBtn[3];
-        quizHWNDs[5] = hQuizResult;
-        quizHWNDs[6] = hQuizNextBtn;
+        quiz_hwnds[0] = quiz_question;
+        quiz_hwnds[1] = quiz_option_btn[0];
+        quiz_hwnds[2] = quiz_option_btn[1];
+        quiz_hwnds[3] = quiz_option_btn[2];
+        quiz_hwnds[4] = quiz_option_btn[3];
+        quiz_hwnds[5] = quiz_result;
+        quiz_hwnds[6] = quiz_next_btn;
 
         for (int i = 0; i < 7; i++) {
-            SendMessageW(quizHWNDs[i], WM_SETFONT, (WPARAM)hFont, TRUE);
+            SendMessageW(quiz_hwnds[i], WM_SETFONT, (WPARAM)font, TRUE);
         }
     }
 }
 
-void quiz_show(int correctIdx) {
+void quiz_show(int corret_idx) {
     int count = dict_count();
     
-    if (correctIdx >= count) {
+    if (corret_idx >= count) {
         return;
     }
 
-    correctPos = correctIdx;
+    correct_pos = corret_idx;
 
     const Word* words = dict_get_all();
-    SetWindowTextW(hQuizQuestion, words[correctIdx].kanji);
+    SetWindowTextW(quiz_question, words[corret_idx].kanji);
 
-    optionIdxs[3] = correctIdx;
+    option_idxs[3] = corret_idx;
 
     for (int i = 0; i < 3; i++) {
         while (1) {
             int r = rand() % count;
-            if (r == correctIdx) continue;
+            if (r == corret_idx) continue;
 
             BOOL dup = FALSE;
             for (int j = 0; j < i; j++) {
-                if (optionIdxs[j] == r) {
+                if (option_idxs[j] == r) {
                     dup = TRUE;
                     break;
                 }
             }
             if (dup) continue;
 
-            optionIdxs[i] = r;
+            option_idxs[i] = r;
             break;
         }
     }
 
     for (int i = 3; i > 0; i--) {
         int j = rand() % (i + 1);
-        int t = optionIdxs[i];
-        optionIdxs[i] = optionIdxs[j];
-        optionIdxs[j] = t;
+        int t = option_idxs[i];
+        option_idxs[i] = option_idxs[j];
+        option_idxs[j] = t;
     }
 
     for (int i = 0; i < 4; i++) {
-        SetWindowTextW(hQuizOptionBtn[i], dict_get(optionIdxs[i])->kana);
+        SetWindowTextW(quiz_option_btn[i], dict_get(option_idxs[i])->kana);
     }
 }
 
 void is_correct() {
-    if (chosenPos == correctPos) {
-        SetWindowTextW(hQuizResult, L"正解です！");
-        plus_proficiency(correctPos);
+    if (chosen_pos == correct_pos) {
+        SetWindowTextW(quiz_result, L"正解です！");
+        plus_proficiency(correct_pos);
     }
     else {
-        SetWindowTextW(hQuizResult, L"残念…");
-        minus_proficiency(correctPos);
+        SetWindowTextW(quiz_result, L"残念…");
+        minus_proficiency(correct_pos);
     }
 }

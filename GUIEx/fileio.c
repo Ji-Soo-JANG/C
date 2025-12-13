@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 const wchar_t* directory = L".\\words";
-const wchar_t* save_path = L".\\words\\words.csv";
 
 int save_all_csv(wchar_t* path) {
 	wchar_t full_path[256];
@@ -26,6 +25,8 @@ int save_all_csv(wchar_t* path) {
 int create_csv(wchar_t* path) {
 	wchar_t full_path[256];
 	wsprintfW(full_path, L"%ls\\%ls.csv", directory, path);
+	OutputDebugStringW(full_path);
+
 
 	FILE* fp;
 	if (_wfopen_s(&fp, full_path, L"r, ccs=UTF-8") != 0) {
@@ -52,7 +53,7 @@ int create_csv(wchar_t* path) {
 Word* read_csv(wchar_t* path, size_t* out_count) {
 	wchar_t full_path[256];
 	wsprintfW(full_path, L"%ls\\%ls", directory, path);
-	//OutputDebugStringW(full_path);
+	OutputDebugStringW(full_path);
 
 	FILE* fp;
 	if (_wfopen_s(&fp, full_path, L"r, ccs=UTF-8") != 0 || fp == NULL) {
@@ -147,8 +148,8 @@ wchar_t* get_all_list_names() {
 	wsprintfW(pattern, L"%s\\*.csv", directory);
 
 	WIN32_FIND_DATAW fd;
-	HANDLE hFind = FindFirstFileW(pattern, &fd);
-	if (hFind == INVALID_HANDLE_VALUE)
+	HANDLE handle = FindFirstFileW(pattern, &fd);
+	if (handle == INVALID_HANDLE_VALUE)
 		return NULL;
 
 	// 2) 임시 버퍼 
@@ -160,9 +161,9 @@ wchar_t* get_all_list_names() {
 			wcscat_s(temp, _countof(temp), fd.cFileName);
 			wcscat_s(temp, _countof(temp), L"\n");
 		}
-	} while (FindNextFileW(hFind, &fd));
+	} while (FindNextFileW(handle, &fd));
 	
-	FindClose(hFind);
+	FindClose(handle);
 
 	// 3) 필요한 크기만큼 malloc 해서 복사
 	size_t len = wcslen(temp) + 1;
